@@ -9,7 +9,6 @@ import RecetteCard from "@components/RecetteCard.astro";
 import Stats from "@components/Stats.astro";
 import FAQAccordion from "@components/FAQAccordion.astro";
 import NewsletterInline from "@components/NewsletterInline.astro";
-import FeedbackPopup from "@components/FeedbackPopup.astro";
 import LocalVideoPlayer from "@components/LocalVideoPlayer.astro";
 import PromoHero, { type ExtraSlide } from "@components/PromoHeroV3.astro";
 import ActuCarousel from "@components/ActuCarousel.astro";
@@ -82,7 +81,73 @@ const schemas = [
     autoAdvanceMs={3200}
   />
 
-  {/* ====================== 2 · URGENCY PROMO TICKER ====================== */}
+  {/* ====================== 2 · PROMOTIONS DE LA SEMAINE CAROUSEL (3x3 Motion) ====================== */}
+  {promosHome.length > 0 && (
+    <section class="section bg-neutral-50/50 border-b border-neutral-100 py-10 relative overflow-hidden">
+      <div class="container-mo">
+        <div class="relative overflow-hidden w-full select-none">
+          <!-- Slide track -->
+          <div id="promo-carousel-track" class="flex transition-transform duration-700 ease-in-out w-full" style="transform: translateX(0%);">
+            <!-- Slide 1: First 3 promotions -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full shrink-0 px-1">
+              {promosHome.slice(0, 3).map((p) => (
+                <PromoCard
+                  slug={p.slug}
+                  titre={p.data.titre}
+                  description={p.data.description}
+                  image={p.data.image}
+                  prix_original={p.data.prix_original}
+                  prix_promo={p.data.prix_promo}
+                  reduction_pct={p.data.reduction_pct}
+                  rayon={p.data.rayon}
+                  magasin={p.data.magasin}
+                  date_fin={p.data.date_fin}
+                  featured={p.data.mise_en_avant}
+                />
+              ))}
+            </div>
+            
+            <!-- Slide 2: Remaining 3 promotions -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full shrink-0 px-1">
+              {promosHome.slice(3, 6).map((p) => (
+                <PromoCard
+                  slug={p.slug}
+                  titre={p.data.titre}
+                  description={p.data.description}
+                  image={p.data.image}
+                  prix_original={p.data.prix_original}
+                  prix_promo={p.data.prix_promo}
+                  reduction_pct={p.data.reduction_pct}
+                  rayon={p.data.rayon}
+                  magasin={p.data.magasin}
+                  date_fin={p.data.date_fin}
+                  featured={p.data.mise_en_avant}
+                />
+              ))}
+            </div>
+          </div>
+
+          <!-- Dot controllers -->
+          {promosHome.length > 3 && (
+            <div class="flex items-center justify-center gap-2.5 mt-6">
+              <button 
+                id="promo-dot-0" 
+                class="w-3.5 h-3.5 rounded-full bg-rouge transition-all duration-300 focus:outline-none" 
+                aria-label="Groupe 1 des promotions"
+              ></button>
+              <button 
+                id="promo-dot-1" 
+                class="w-3.5 h-3.5 rounded-full bg-neutral-350 hover:bg-neutral-450 transition-all duration-300 focus:outline-none" 
+                aria-label="Groupe 2 des promotions"
+              ></button>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {/* ====================== 3 · URGENCY PROMO TICKER ====================== */}
   {featuredPromo && (
     <section class="relative overflow-hidden bg-rouge text-white animate-fade-up">
       <div class="container-mo py-4 md:py-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] md:text-[14px] font-pro">
@@ -103,7 +168,7 @@ const schemas = [
     </section>
   )}
 
-  {/* ====================== 3 · LES IMMANQUABLES GRID (Leclerc Replica Section 2) ====================== */}
+  {/* ====================== 4 · LES IMMANQUABLES GRID (Leclerc Replica Section 2) ====================== */}
   <section class="section bg-neutral-50 pb-8 border-b border-neutral-100">
     <div class="container-mo">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
@@ -149,7 +214,7 @@ const schemas = [
             <div class="w-16 h-16 rounded-full bg-rouge text-white flex flex-col items-center justify-center font-black select-none flex-shrink-0 border-2 border-white shadow">
               <span class="text-[16px] leading-none">-40%</span>
             </div>
-            <div>
+            <div class="text-left">
               <span class="text-[11px] font-black text-rouge uppercase tracking-wider block mb-1">Immanquable de la semaine</span>
               <h3 class="font-soft font-bold text-[20px] md:text-[24px] text-neutral-900 leading-tight">Agneau entier cost-price Aïd el Kebir</h3>
               <p class="text-[13.5px] text-neutral-600 mt-1 max-w-xl">Disponible en commande exclusive pour vos fêtes de famille, découpé par nos artisans.</p>
@@ -171,10 +236,10 @@ const schemas = [
     </div>
   </section>
 
-  {/* ====================== 4 · ACHETER PAR RAYON (Leclerc Replica Section 4) ====================== */}
+  {/* ====================== 5 · ACHETER PAR RAYON (Leclerc Replica Section 4) ====================== */}
   <section class="section bg-white border-b border-neutral-100 py-12">
     <div class="container-mo">
-      <div class="mb-8 select-none">
+      <div class="mb-8 select-none text-left">
         <h2 class="font-soft font-black text-[22px] md:text-[26px] text-neutral-900 tracking-tight">
           Acheter par rayon
         </h2>
@@ -204,123 +269,92 @@ const schemas = [
     </div>
   </section>
 
-  {/* ====================== 5 · PROMOS DE LA SEMAINE GRID (PromoCardV3) ====================== */}
-  {promosHome.length > 0 && (
-    <section class="section bg-neutral-50/50 border-b border-neutral-100">
-      <div class="container-mo">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal">
-          <div class="max-w-2xl">
-            <span class="eyebrow !text-rouge">Promos de la semaine</span>
-            <h2 class="display-lg mt-4 text-balance">
-              Les <span class="text-rouge">vraies promos</span> de la semaine.
-            </h2>
-            <p class="mt-3 text-[15px] text-neutral-600">
-              Mises à jour chaque semaine. Affichées à l'euro près dans notre magasin de Toulouse.
-            </p>
-          </div>
-          <a href="/promos" class="btn btn-rouge shrink-0 font-bold">
-            Toutes les promos
-          </a>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-reveal-stagger>
-          {promosHome.map((p) => (
-            <div class="reveal">
-              <PromoCard
-                slug={p.slug}
-                titre={p.data.titre}
-                description={p.data.description}
-                image={p.data.image}
-                prix_original={p.data.prix_original}
-                prix_promo={p.data.prix_promo}
-                reduction_pct={p.data.reduction_pct}
-                rayon={p.data.rayon}
-                magasin={p.data.magasin}
-                date_fin={p.data.date_fin}
-                featured={p.data.mise_en_avant}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
+  {/* Intermediate Logo signature area 1 (Break after rayons) */}
+  <div
+    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
+    style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
+  >
+    <div class="group relative block shrink-0">
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Marché de Mo'"
+        width="110"
+        height="110"
+        loading="lazy"
+        class="w-24 h-24 lg:w-28 lg:h-28 object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-300 bg-white rounded-full shadow-sm p-0.5"
+      />
+    </div>
+  </div>
 
   {/* ====================== 6 · CATALOGUES ET ÉVÉNEMENTS (Leclerc Replica Section 5) ====================== */}
   <section class="section bg-white border-b border-neutral-100 py-12">
     <div class="container-mo">
-      <div class="mb-8 select-none">
+      <div class="mb-8 select-none text-left">
         <h2 class="font-soft font-black text-[22px] md:text-[26px] text-neutral-900 tracking-tight">
           Nos catalogues et événements
         </h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Flyer Card 1: Catalogues -->
-        <a href="/promos" class="group relative block rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-neutral-100 bg-neutral-50 h-[190px]">
-          <div class="flex h-full">
-            <div class="flex-1 p-5 flex flex-col justify-between">
-              <div>
-                <span class="inline-block px-2 py-0.5 rounded bg-vert text-[9px] font-black text-white uppercase mb-2">PROMOS</span>
-                <h3 class="font-soft font-bold text-[16px] text-neutral-800 leading-snug">Les catalogues du moment</h3>
-              </div>
-              <span class="text-[12px] font-bold text-vert flex items-center gap-1 group-hover:translate-x-1 transition-transform">Consulter <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg></span>
-            </div>
-            <div class="w-1/3 relative bg-neutral-200">
-              <img src="/promos/promo_mobile_marchedemo.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Catalogue 1 -->
+        <div class="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/50 flex gap-4">
+          <div class="w-24 h-32 bg-rouge/10 rounded-lg shadow border border-neutral-200 flex-shrink-0 overflow-hidden relative group">
+            <img src="/promos/promo_rectangulaire.webp" alt="Prospectus" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <div class="absolute inset-0 bg-black/10"></div>
           </div>
-        </a>
+          <div class="flex flex-col justify-between text-left">
+            <div>
+              <span class="text-[9.5px] font-black uppercase text-rouge bg-rouge/10 px-2 py-0.5 rounded">Prospectus</span>
+              <h3 class="font-bold text-[14.5px] text-neutral-900 mt-2 leading-tight">Le plein de saveurs de l'Aïd</h3>
+              <p class="text-[12px] text-neutral-500 mt-1">Du 1er au 14 juin. Promotions majeures sur la boucherie et l'épicerie fine.</p>
+            </div>
+            <a href="/promos" class="text-[12.5px] font-bold text-vert hover:underline flex items-center gap-1">Consulter le catalogue →</a>
+          </div>
+        </div>
 
-        <!-- Flyer Card 2: Games/Events -->
-        <a href="/programme-fidelite" class="group relative block rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-neutral-100 bg-neutral-50 h-[190px]">
-          <div class="flex h-full">
-            <div class="flex-1 p-5 flex flex-col justify-between">
-              <div>
-                <span class="inline-block px-2 py-0.5 rounded bg-rouge text-[9px] font-black text-white uppercase mb-2">EVENTS</span>
-                <h3 class="font-soft font-bold text-[16px] text-neutral-800 leading-snug">Les jeux et animations fidélité</h3>
-              </div>
-              <span class="text-[12px] font-bold text-vert flex items-center gap-1 group-hover:translate-x-1 transition-transform">Participer <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg></span>
-            </div>
-            <div class="w-1/3 relative bg-rouge/10 flex items-center justify-center text-[48px] select-none">
-              🎁
-            </div>
+        <!-- Catalogue 2 -->
+        <div class="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/50 flex gap-4">
+          <div class="w-24 h-32 bg-vert/10 rounded-lg shadow border border-neutral-200 flex-shrink-0 overflow-hidden relative group">
+            <img src="/images/rayons/epices-du-monde.jpg" alt="Catalogue Épices" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <div class="absolute inset-0 bg-black/10"></div>
           </div>
-        </a>
+          <div class="flex flex-col justify-between text-left">
+            <div>
+              <span class="text-[9.5px] font-black uppercase text-vert bg-vert/10 px-2 py-0.5 rounded">Arrivage</span>
+              <h3 class="font-bold text-[14.5px] text-neutral-900 mt-2 leading-tight">Épices &amp; Douceurs d'Orient</h3>
+              <p class="text-[12px] text-neutral-500 mt-1">Nouveautés en direct. Huiles précieuses et spécialités de saison.</p>
+            </div>
+            <a href="/promos" class="text-[12.5px] font-bold text-vert hover:underline flex items-center gap-1">Consulter les arrivages →</a>
+          </div>
+        </div>
 
-        <!-- Flyer Card 3: Weekly Offers -->
-        <a href="/promos" class="group relative block rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-neutral-100 bg-neutral-50 h-[190px]">
-          <div class="flex h-full">
-            <div class="flex-1 p-5 flex flex-col justify-between">
-              <div>
-                <span class="inline-block px-2 py-0.5 rounded bg-vert text-[9px] font-black text-white uppercase mb-2">OFFRES</span>
-                <h3 class="font-soft font-bold text-[16px] text-neutral-800 leading-snug">Les offres de la semaine à ne pas manquer</h3>
-              </div>
-              <span class="text-[12px] font-bold text-vert flex items-center gap-1 group-hover:translate-x-1 transition-transform">Voir les remises <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg></span>
-            </div>
-            <div class="w-1/3 relative bg-rouge/5 flex flex-col items-center justify-center p-3 select-none text-center">
-              <span class="text-[28px] font-black text-rouge">-25%</span>
-              <span class="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Cagnottés</span>
-            </div>
+        <!-- Event Banner Card -->
+        <div class="bg-gradient-to-br from-vert to-vert-dark text-white rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden shadow-sm">
+          <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+            <img src="/logos/favicon-marchedemo-contourwh.png" alt="" class="w-36 h-36" />
           </div>
-        </a>
+          <div class="relative z-10 text-left">
+            <span class="text-[9px] font-black uppercase bg-white/20 text-white px-2 py-0.5 rounded tracking-wider">Événement</span>
+            <h3 class="font-soft font-bold text-[18px] mt-2.5 leading-snug">Grand Marché Frais d'Été</h3>
+            <p class="text-[12.5px] text-white/80 mt-1 leading-snug">Profitez d'un arrivage direct de pastèques, melons exotiques et menthe fraîche à prix coûtant.</p>
+          </div>
+          <a href="/actualites" class="text-[13px] font-bold text-white underline underline-offset-4 hover:opacity-90 mt-5 block text-left">Voir tous les événements</a>
+        </div>
       </div>
     </div>
   </section>
 
-  {/* ====================== 7 · CULTURAL SECTIONS (data-culture with motifs/dividers) ====================== */}
-
-  {/* MAGHREB & MEDITERRANEE */}
-  <div class="culture-divider" data-culture="maghreb" />
-  <section class="section py-16" data-culture="maghreb">
-    <div class="container-mo relative z-10">
-      <div class="max-w-3xl mb-12 reveal">
-        <span class="eyebrow">Saveurs du Maghreb</span>
+  {/* ====================== 7 · SECTIONS CULTURELLES (Maghreb, Asie, Afrique, Inde, Italie) ====================== */}
+  {/* SECTION MAGHREB & MÉDITERRANÉE */}
+  <section class="section bg-white pt-12 pb-10">
+    <div class="container-mo">
+      <div class="mb-8 text-left">
+        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveur-mediterranee']}`}>Saveurs de Méditerranée</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Maghreb">
-          Méditerranée &amp; Orient.
+          Le soleil dans votre assiette.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
-          Découvrez notre sélection de couscous, d'olives, de dattes d'Algérie et de condiments typiques pour voyager au gré des saveurs méditerranéennes.
+          Découvrez notre sélection d'huiles d'olive extra vierges tunisiennes, semoule fine pour couscous, olives marinées maison et pâtisseries orientales.
         </p>
       </div>
 
@@ -333,18 +367,18 @@ const schemas = [
       </div>
     </div>
   </section>
+  <div class="culture-divider" data-culture="maghreb" />
 
-  {/* ASIE */}
-  <div class="culture-divider" data-culture="asie" />
-  <section class="section py-16" data-culture="asie">
-    <div class="container-mo relative z-10">
-      <div class="max-w-3xl mb-12 reveal">
-        <span class="eyebrow">Saveurs d'Asie</span>
+  {/* SECTION ASIE */}
+  <section class="section bg-white pt-12 pb-10">
+    <div class="container-mo">
+      <div class="mb-8 text-left">
+        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveurs-asie']}`}>Saveurs d'Asie</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Asie">
-          Japon, Corée, Thaïlande.
+          L'Asie à portée de baguettes.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
-          Kimchi authentique, sauces soja, nouilles udon et produits indispensables importés en direct pour cuisiner toutes vos recettes asiatiques favorites.
+          Riz jasmin parfumé, nouilles de blé et de riz, sauces soja de garde, pâtes de curry thaïes et sélection de thés parfumés.
         </p>
       </div>
 
@@ -357,18 +391,18 @@ const schemas = [
       </div>
     </div>
   </section>
+  <div class="culture-divider" data-culture="asie" />
 
-  {/* CRÉOLE & AFRIQUE */}
-  <div class="culture-divider" data-culture="creole" />
-  <section class="section py-16" data-culture="creole">
-    <div class="container-mo relative z-10">
-      <div class="max-w-3xl mb-12 reveal">
-        <span class="eyebrow">Saveurs d'Afrique &amp; Créole</span>
-        <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Créole">
-          Afrique de l'Ouest &amp; Antilles.
+  {/* SECTION AFRIQUE & CRÉOLE */}
+  <section class="section bg-white pt-12 pb-10">
+    <div class="container-mo">
+      <div class="mb-8 text-left">
+        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveurs-afrique']}`}>Saveurs d'Afrique &amp; Antilles</span>
+        <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Afrique">
+          Saveurs d'Afrique et Créoles.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
-          Retrouvez le manioc, les bananes plantains, le fufu, le bissap et de nombreuses épices traditionnelles du continent africain et des îles créoles.
+          Manioc frais, bananes plantain mûres, farine de fufu, piment végétarien doux, gombos et huiles de palme raffinées de qualité.
         </p>
       </div>
 
@@ -381,18 +415,18 @@ const schemas = [
       </div>
     </div>
   </section>
+  <div class="culture-divider" data-culture="afrique" />
 
-  {/* INDE */}
-  <div class="culture-divider" data-culture="inde" />
-  <section class="section py-16" data-culture="inde">
-    <div class="container-mo relative z-10">
-      <div class="max-w-3xl mb-12 reveal">
-        <span class="eyebrow">Saveurs de l'Inde</span>
+  {/* SECTION INDE */}
+  <section class="section bg-white pt-12 pb-10">
+    <div class="container-mo">
+      <div class="mb-8 text-left">
+        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['epices-du-monde']}`}>Inde &amp; Épices du Monde</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Inde">
-          L'atelier d'épices et de parfums.
+          Un voyage aromatique intense.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
-          Curry de Madras, riz basmati parfumé, cardamome et safrans de qualité supérieure pour illuminer vos currys et créations indiennes.
+          Curcuma de Madras, graines de cardamome verte, riz basmati de garde, mélanges garam masala authentiques et condiments chutney.
         </p>
       </div>
 
@@ -405,13 +439,13 @@ const schemas = [
       </div>
     </div>
   </section>
+  <div class="culture-divider" data-culture="inde" />
 
-  {/* ITALIE */}
-  <div class="culture-divider" data-culture="italie" />
-  <section class="section py-16" data-culture="italie">
-    <div class="container-mo relative z-10">
-      <div class="max-w-3xl mb-12 reveal">
-        <span class="eyebrow">Saveurs d'Italie</span>
+  {/* SECTION ITALIE */}
+  <section class="section bg-white pt-12 pb-10">
+    <div class="container-mo">
+      <div class="mb-8 text-left">
+        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveur-mediterranee']}`}>Gastronomie Italienne</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Italie">
           Le goût de la Dolce Vita.
         </h2>
@@ -432,9 +466,9 @@ const schemas = [
   <div class="culture-divider" data-culture="italie" />
 
   {/* ====================== 8 · EDITORIAL NEWS & TIKTOK VIDEOS ====================== */}
-  <section class="section bg-white relative overflow-hidden">
+  <section class="section bg-white relative overflow-hidden py-12">
     <div class="container-mo">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal text-left">
         <div class="max-w-2xl">
           <span class="eyebrow">Les actus du marché</span>
           <h2 class="display-lg mt-4 text-balance">
@@ -454,9 +488,9 @@ const schemas = [
   </section>
 
   {videos.length > 0 && (
-    <section class="section bg-blanc animate-fade-up">
+    <section class="section bg-blanc animate-fade-up py-12 border-t border-neutral-100">
       <div class="container-mo">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal text-left">
           <div class="max-w-2xl">
             <span class="eyebrow">Marché de Mo' en vidéos</span>
             <h2 class="display-lg mt-4 text-balance">
@@ -468,13 +502,16 @@ const schemas = [
           </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-reveal-stagger>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.slice(0, 3).map((v) => {
             return (
               <LocalVideoPlayer
-                src={v.data.src_local}
+                id={v.id}
                 title={v.data.titre}
+                poster={v.data.poster}
+                src={v.data.url_video}
                 href={v.data.url_tiktok}
+                duration={v.data.duree}
               />
             );
           })}
@@ -483,20 +520,20 @@ const schemas = [
     </section>
   )}
 
-  {/* ====================== 9 · INFOS MAGASIN TOULOUSE SUD ====================== */}
-  <section class="section bg-white border-t border-neutral-100">
+  {/* ====================== 9 · LE MAGASIN TOULOUSE SUD ====================== */}
+  <section class="section bg-white border-t border-b border-neutral-100 py-14">
     <div class="container-mo">
       <div class="text-center max-w-3xl mx-auto mb-14 reveal">
         <span class="eyebrow !justify-center">Notre magasin</span>
-        <h2 class="display-lg mt-4 text-balance">
+        <h2 class="display-lg mt-4 text-balance text-neutral-900">
           Votre supermarché à Toulouse.<br/>
-          <span class="text-vert">Ouvert 7j/7, même le dimanche matin.</span>
+          <span class="text-vert">Ouvert 7j/7, même dimanche matin.</span>
         </h2>
       </div>
 
-      <div class="max-w-3xl mx-auto">
+      <div class="max-w-4xl mx-auto">
         {Object.values(MAGASINS).map((m) => (
-          <div
+          <div 
             class="group relative overflow-hidden rounded-3xl bg-noir text-white shadow-xl hover:shadow-2xl transition-all duration-500 flex flex-col md:flex-row"
           >
             <!-- Image Area -->
@@ -511,7 +548,7 @@ const schemas = [
             </div>
 
             <!-- Content Area -->
-            <div class="md:w-1/2 p-8 md:p-10 flex flex-col justify-between relative z-10 bg-noir">
+            <div class="md:w-1/2 p-8 md:p-10 flex flex-col justify-between relative z-10 bg-noir text-left">
               <div>
                 {m.badge && (
                   <span class="inline-flex items-center mb-3 px-3 py-1 rounded-full bg-vert text-white text-[10px] font-black uppercase tracking-wider">
@@ -569,6 +606,73 @@ const schemas = [
   {/* ====================== NEWSLETTER ====================== */}
   <NewsletterInline variant="dark" />
 
+  {/* ====================== 10 · NOS 4 ENGAGEMENTS (Restauration V2) ====================== */}
+  <section class="section bg-white py-14 border-b border-neutral-100">
+    <div class="container-mo">
+      <div class="text-center max-w-3xl mx-auto mb-14 reveal">
+        <span class="eyebrow !justify-center">Nos 4 engagements</span>
+        <h2 class="display-lg mt-4 text-balance text-neutral-900">
+          Un supermarché, oui.<br/>
+          <span class="text-rouge">Un engagement</span>, surtout.
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+        {ENGAGEMENTS.map((e, i) => (
+          <article
+            class="bg-white rounded-3xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 reveal text-left"
+            style={`--reveal-delay: ${i * 80}ms`}
+          >
+            <div class="w-14 h-14 rounded-2xl bg-vert/10 text-vert flex items-center justify-center mb-6">
+              {e.icone === "heart" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              )}
+              {e.icone === "people" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              )}
+              {e.icone === "trophy" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+                </svg>
+              )}
+              {e.icone === "care" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  <path d="M12 7v4M9 9h6"/>
+                </svg>
+              )}
+            </div>
+            <h3 class="font-soft font-bold text-[18px] leading-tight text-neutral-900">{e.titre}</h3>
+            <p class="mt-3 text-[13.5px] text-neutral-500 font-pro leading-relaxed">{e.resume}</p>
+            <p class="mt-4 text-[13.5px] text-neutral-600 leading-relaxed">{e.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* Intermediate Logo signature area 2 (Break after engagements) */}
+  <div
+    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
+    style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
+  >
+    <div class="group relative block shrink-0">
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Signature Marché de Mo'"
+        width="110"
+        height="110"
+        loading="lazy"
+        class="w-24 h-24 lg:w-28 lg:h-28 object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-300 bg-white rounded-full p-0.5 shadow-sm"
+      />
+    </div>
+  </div>
+
   {/* ====================== SUGGESTIONS FORM ====================== */}
   <section id="suggestions" class="section bg-white scroll-mt-24">
     <div class="container-mo">
@@ -582,7 +686,7 @@ const schemas = [
         />
 
         <div class="relative z-10 grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-16 items-start">
-          <div>
+          <div class="text-left">
             <span class="eyebrow !text-vert">Votre avis compte</span>
             <h2 class="display-lg mt-4 text-balance">
               Des conseils ?<br/>Nous sommes à l'écoute.
@@ -688,7 +792,57 @@ const schemas = [
 
   {/* ====================== FAQ Accordion ====================== */}
   <FAQAccordion items={FAQ_HOME} />
-
-  {/* ====================== FEEDBACK POPUP ====================== */}
-  <FeedbackPopup />
 </Layout>
+
+<!-- Promotions Autoplay and Translation Animation script -->
+<script is:inline>
+  document.addEventListener("astro:page-load", () => {
+    const track = document.getElementById("promo-carousel-track");
+    const dot0 = document.getElementById("promo-dot-0");
+    const dot1 = document.getElementById("promo-dot-1");
+    if (!track || !dot0 || !dot1) return;
+
+    let currentSlide = 0;
+    let autoplayTimer = null;
+
+    const showSlide = (index) => {
+      currentSlide = index;
+      track.style.transform = `translateX(-${index * 100}%)`;
+      if (index === 0) {
+        dot0.classList.remove("bg-neutral-350", "hover:bg-neutral-450");
+        dot0.classList.add("bg-rouge");
+        dot1.classList.remove("bg-rouge");
+        dot1.classList.add("bg-neutral-350", "hover:bg-neutral-450");
+      } else {
+        dot1.classList.remove("bg-neutral-350", "hover:bg-neutral-450");
+        dot1.classList.add("bg-rouge");
+        dot0.classList.remove("bg-rouge");
+        dot0.classList.add("bg-neutral-350", "hover:bg-neutral-450");
+      }
+    };
+
+    dot0.addEventListener("click", () => {
+      showSlide(0);
+      resetAutoplay();
+    });
+
+    dot1.addEventListener("click", () => {
+      showSlide(1);
+      resetAutoplay();
+    });
+
+    const startAutoplay = () => {
+      autoplayTimer = setInterval(() => {
+        const nextSlide = (currentSlide + 1) % 2;
+        showSlide(nextSlide);
+      }, 5500);
+    };
+
+    const resetAutoplay = () => {
+      if (autoplayTimer) clearInterval(autoplayTimer);
+      startAutoplay();
+    };
+
+    startAutoplay();
+  });
+</script>
