@@ -1,6 +1,6 @@
 import { d as createAstro, c as createComponent, e as renderComponent, r as renderTemplate, m as maybeRenderHead, b as addAttribute } from '../../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { $ as $$Layout } from '../../chunks/Layout_BrmqTQSx.mjs';
+import { $ as $$Layout } from '../../chunks/Layout_D6bhTD9n.mjs';
 import { S as SITE } from '../../chunks/site_dG8pplQb.mjs';
 import { i as isAuthenticated } from '../../chunks/auth_YbJ1phUF.mjs';
 /* empty css                                    */

@@ -1,13 +1,13 @@
 import { c as createComponent, e as renderComponent, r as renderTemplate, m as maybeRenderHead, b as addAttribute } from '../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { b as breadcrumbSchema, $ as $$Layout } from '../chunks/Layout_BrmqTQSx.mjs';
+import { b as breadcrumbSchema, $ as $$Layout } from '../chunks/Layout_D6bhTD9n.mjs';
 import { $ as $$Breadcrumb } from '../chunks/Breadcrumb_EdwKG08k.mjs';
-import { $ as $$PromoCard } from '../chunks/PromoCard_W3YpCsug.mjs';
+import { $ as $$PromoCard } from '../chunks/PromoCard_YssLCAMY.mjs';
 import { $ as $$FAQAccordion } from '../chunks/FAQAccordion_C1RYWw0L.mjs';
 import { $ as $$NewsletterInline } from '../chunks/NewsletterInline_BH8R9GYB.mjs';
 import { a as RAYONS_LIST, S as SITE } from '../chunks/site_dG8pplQb.mjs';
 import { F as FAQ_HOME } from '../chunks/faqs_BJZF7VHx.mjs';
-import { g as getActivePromos } from '../chunks/PromoCardV3_CPSQHNVV.mjs';
+import { g as getActivePromos } from '../chunks/PromoCardV3_D2-d6UsM.mjs';
 export { renderers } from '../renderers.mjs';
 
 const prerender = false;

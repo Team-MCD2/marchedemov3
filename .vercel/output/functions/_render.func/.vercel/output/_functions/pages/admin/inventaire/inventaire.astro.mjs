@@ -1,6 +1,6 @@
 import { d as createAstro, c as createComponent, e as renderComponent, r as renderTemplate, m as maybeRenderHead, b as addAttribute, F as Fragment } from '../../../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { $ as $$InventaireLayout } from '../../../chunks/InventaireLayout_CE2YPdbt.mjs';
+import { $ as $$InventaireLayout } from '../../../chunks/InventaireLayout_CG313_Rs.mjs';
 import { $ as $$EditModal } from '../../../chunks/EditModal_C81yTaCE.mjs';
 import { R as RAYON_OPTIONS, M as MAGASINS } from '../../../chunks/inventaire-rayons_NoGWBJZi.mjs';
 /* empty css                                            */

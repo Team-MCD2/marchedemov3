@@ -1,6 +1,6 @@
 import { d as createAstro, c as createComponent, e as renderComponent, r as renderTemplate, b as addAttribute, m as maybeRenderHead } from '../../../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { $ as $$InventaireLayout } from '../../../chunks/InventaireLayout_CE2YPdbt.mjs';
+import { $ as $$InventaireLayout } from '../../../chunks/InventaireLayout_CG313_Rs.mjs';
 import { C as COOKIE_NAME, v as verifySessionToken, s as safeNextPath } from '../../../chunks/auth_ClxGn7gk.mjs';
 export { renderers } from '../../../renderers.mjs';
 

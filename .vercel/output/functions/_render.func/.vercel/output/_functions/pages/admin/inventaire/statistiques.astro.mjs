@@ -1,6 +1,6 @@
 import { c as createComponent, e as renderComponent, r as renderTemplate, m as maybeRenderHead } from '../../../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { $ as $$InventaireLayout } from '../../../chunks/InventaireLayout_CE2YPdbt.mjs';
+import { $ as $$InventaireLayout } from '../../../chunks/InventaireLayout_CG313_Rs.mjs';
 export { renderers } from '../../../renderers.mjs';
 
 const prerender = false;

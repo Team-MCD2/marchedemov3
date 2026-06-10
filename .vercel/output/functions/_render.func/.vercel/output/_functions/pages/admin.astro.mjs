@@ -1,6 +1,6 @@
 import { d as createAstro, c as createComponent, m as maybeRenderHead, b as addAttribute, s as spreadAttributes, r as renderTemplate, e as renderComponent, F as Fragment } from '../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { $ as $$Layout } from '../chunks/Layout_BrmqTQSx.mjs';
+import { $ as $$Layout } from '../chunks/Layout_D6bhTD9n.mjs';
 import { $ as $$AdminTopbar } from '../chunks/AdminTopbar_C-Ia9XuP.mjs';
 import { $ as $$StatCard } from '../chunks/StatCard_CeQX2K2s.mjs';
 import 'clsx';
@@ -8,7 +8,7 @@ import { S as SITE } from '../chunks/site_dG8pplQb.mjs';
 import { i as isAuthenticated } from '../chunks/auth_YbJ1phUF.mjs';
 import '../chunks/supabase_DGRgIA0P.mjs';
 import { a as activityTableStatus, r as recentActivity, d as dailyActivityCounts } from '../chunks/admin-activity_7EJyrd7K.mjs';
-import { g as getCollection } from '../chunks/_astro_content_BJyRHHIi.mjs';
+import { g as getCollection } from '../chunks/_astro_content_6ZIXnDBU.mjs';
 export { renderers } from '../renderers.mjs';
 
 const $$Astro$3 = createAstro("https://marchedemov2.vercel.app");

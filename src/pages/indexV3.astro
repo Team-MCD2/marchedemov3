@@ -22,6 +22,21 @@ import { getActivePromos } from "@/lib/promos-repo";
 import { getProduitsVedettes, getProduitsByRayon } from "@/lib/produits-repo";
 import { getHomeEditorialSlides, getHomeSeoSettings } from "@/lib/home-content";
 
+// Accent colors matching V2 rayons for dots/tags
+const CATEGORY_ACCENTS: Record<string, string> = {
+  "boucherie-halal": "#8B1919",
+  "fruits-legumes": "#2E8B4A",
+  "epices-du-monde": "#A86B1E",
+  "saveurs-afrique": "#C8751A",
+  "saveurs-asie": "#1E5F74",
+  "saveur-mediterranee": "#0F52BA",
+  "saveur-sud-amer": "#B22222",
+  "balkans-turques": "#D2691E",
+  "produits-courants": "#4A5568",
+  "surgeles": "#00A86B",
+};
+
+
 // 1. Fetch promotional, editorial, and SEO configurations
 const allPromos = await getActivePromos();
 const featuredPromo =

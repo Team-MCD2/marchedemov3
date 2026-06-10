@@ -1,6 +1,6 @@
 import { d as createAstro, c as createComponent, e as renderComponent, r as renderTemplate, m as maybeRenderHead, F as Fragment$1, b as addAttribute } from '../../chunks/astro/server_BQgcolZ2.mjs';
 import 'kleur/colors';
-import { $ as $$Layout } from '../../chunks/Layout_BrmqTQSx.mjs';
+import { $ as $$Layout } from '../../chunks/Layout_D6bhTD9n.mjs';
 import { $ as $$AdminTopbar } from '../../chunks/AdminTopbar_C-Ia9XuP.mjs';
 import { $ as $$Breadcrumb } from '../../chunks/Breadcrumb_EdwKG08k.mjs';
 import { $ as $$StatCard } from '../../chunks/StatCard_CeQX2K2s.mjs';
