@@ -3,3 +3,5 @@
 blend_mapping/
 node_modules/
 screenshots/
+.vercel/
+dist/

@@ -1,9 +1,0 @@
----
-export const prerender = false;
-
-import { configV3 } from "../lib/config-v3";
-import IndexV2 from "./indexV2.astro";
-import IndexV3 from "./indexV3.astro";
----
-
-{configV3.isV3Active ? <IndexV3 /> : <IndexV2 />}
