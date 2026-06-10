@@ -248,11 +248,24 @@ function mergeBySlug(
  * row cap is 1000 which is more than enough; beyond that we'd paginate.
  */
 export async function getAllProduits(): Promise<ProduitPublic[]> {
-  const [v2, inv] = await Promise.all([
+  const [v2, inv, promos] = await Promise.all([
     fetchV2AllProduits(),
     getArticlesPublies(),
+    getActivePromos(),
   ]);
-  const merged = mergeBySlug(v2, [...inv]);
+  const mappedPromos: ProduitPublic[] = promos.map((p) => ({
+    slug: p.slug,
+    nom: p.data.titre,
+    description: p.data.description,
+    image: p.data.image,
+    rayon: p.data.rayon,
+    categorie: null,
+    sous_categorie: null,
+    origine: null,
+    badge: `-${p.data.reduction_pct}%`,
+    ordre: p.data.ordre || 0,
+  }));
+  const merged = mergeBySlug(v2, [...inv, ...mappedPromos]);
   if (merged.length > 0) return merged.sort(byRayonOrdreNom);
   return allFromLocal();
 }
@@ -305,11 +318,24 @@ function localToPublic(r: CatalogueRow): ProduitPublic {
  * V2 + inventaire merge, deduped by slug.
  */
 export async function getProduitsByRayon(rayon: string): Promise<ProduitPublic[]> {
-  const [v2, inv] = await Promise.all([
+  const [v2, inv, promos] = await Promise.all([
     fetchV2ByRayon(rayon),
     getArticlesPubliesByRayon(rayon),
+    getActivePromos(),
   ]);
-  const merged = mergeBySlug(v2, inv);
+  const rayonPromos = promos.filter((p) => p.data.rayon === rayon).map((p) => ({
+    slug: p.slug,
+    nom: p.data.titre,
+    description: p.data.description,
+    image: p.data.image,
+    rayon: p.data.rayon,
+    categorie: null,
+    sous_categorie: null,
+    origine: null,
+    badge: `-${p.data.reduction_pct}%`,
+    ordre: p.data.ordre || 0,
+  }));
+  const merged = mergeBySlug(v2, [...inv, ...rayonPromos]);
   if (merged.length > 0) return merged.sort(byOrdreNom);
   return LOCAL_CATALOGUE.filter((r) => r.rayon === rayon).map(localToPublic);
 }
@@ -350,6 +376,23 @@ export async function getProduitBySlug(
   const inv = await getArticleBySlug(slug);
   if (inv) return inv;
 
+  const promos = await getActivePromos();
+  const promo = promos.find((p) => p.slug === slug);
+  if (promo) {
+    return {
+      slug: promo.slug,
+      nom: promo.data.titre,
+      description: promo.data.description,
+      image: promo.data.image,
+      rayon: promo.data.rayon,
+      categorie: null,
+      sous_categorie: null,
+      origine: null,
+      badge: `-${promo.data.reduction_pct}%`,
+      ordre: promo.data.ordre || 0,
+    };
+  }
+
   const local = LOCAL_CATALOGUE.find((r) => r.slug === slug);
   return local ? localToPublic(local) : null;
 }
@@ -383,8 +426,9 @@ async function fetchV2BySlug(slug: string): Promise<ProduitPublic | null> {
  * Falls back to the local catalogue slugs if both sources are empty.
  */
 export async function getAllProduitSlugs(): Promise<string[]> {
-  const [v2, inv] = await Promise.all([fetchV2Slugs(), getArticleSlugs()]);
-  const union = new Set<string>([...v2, ...inv].filter(Boolean));
+  const [v2, inv, promos] = await Promise.all([fetchV2Slugs(), getArticleSlugs(), getActivePromos()]);
+  const promoSlugs = promos.map((p) => p.slug);
+  const union = new Set<string>([...v2, ...inv, ...promoSlugs].filter(Boolean));
   if (union.size > 0) return [...union];
   return LOCAL_CATALOGUE.map((r) => r.slug);
 }

@@ -62,7 +62,8 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Conteneur */
-  --max-content: 1536px;
+  --max-content: 1760px;
+
 }
 
 /* --- Rayons : tokens culturels par défaut (overridés par /src/styles/rayons/[slug].css) --- */

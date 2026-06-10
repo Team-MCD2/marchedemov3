@@ -142,7 +142,7 @@ export default {
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.1)',
       },
       maxWidth: {
-        'content': '1280px',
+        'content': '1760px',
         'prose-wide': '72ch',
       },
       animation: {

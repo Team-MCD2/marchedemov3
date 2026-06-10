@@ -1,6 +1,48 @@
 /* Global styles — Marché de Mo' V2 */
 @import "./tokens.css";
 
+/* Roboto @font-face declarations for local files */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Roboto'), local('Roboto-Regular'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-regular.woff2') format('woff2'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-regular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Roboto Medium'), local('Roboto-Medium'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-500.woff2') format('woff2'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-500.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Roboto Bold'), local('Roboto-Bold'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-700.woff2') format('woff2'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-700.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: local('Roboto Black'), local('Roboto-Black'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-900.woff2') format('woff2'),
+       url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-900.woff') format('woff');
+}
+
+
 /* DA tokens per rayon — activated via body[data-rayon="..."] */
 /* 5 culturels (hero dark + motif typé) */
 @import "./rayons/saveurs-afrique.css";
@@ -93,8 +135,7 @@
 @layer components {
   /* Conteneur principal */
   .container-mo {
-    @apply mx-auto w-full px-4 md:px-6 lg:px-6;
-    max-width: var(--max-content);
+    @apply mx-auto w-full px-4 md:px-6 lg:px-6 max-w-[1760px];
   }
 
   /* Boutons — avec support magnetic pull via CSS vars --mag-x/--mag-y.

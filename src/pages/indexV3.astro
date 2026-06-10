@@ -252,7 +252,7 @@ const schemas = [
   </section>
 
   {/* ====================== 5 · ACHETER PAR RAYON (Leclerc Replica Section 4) ====================== */}
-  <section class="section bg-white border-b border-neutral-100 py-12">
+  <section class="section bg-white border-b border-neutral-100 py-12 hidden lg:block">
     <div class="container-mo">
       <div class="mb-8 select-none text-left">
         <h2 class="font-soft font-black text-[22px] md:text-[26px] text-neutral-900 tracking-tight">
@@ -286,7 +286,7 @@ const schemas = [
 
   {/* Intermediate Logo signature area 1 (Break after rayons) */}
   <div
-    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
+    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
     style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
   >
     <div class="group relative block shrink-0">
@@ -361,7 +361,7 @@ const schemas = [
 
   {/* ====================== 7 · SECTIONS CULTURELLES (Maghreb, Asie, Afrique, Inde, Italie) ====================== */}
   {/* SECTION MAGHREB & MÉDITERRANÉE */}
-  <section class="section bg-white pt-12 pb-10">
+  <section class="section bg-white pt-12 pb-10 hidden lg:block">
     <div class="container-mo">
       <div class="mb-8 text-left">
         <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveur-mediterranee']}`}>Saveurs de Méditerranée</span>
@@ -382,10 +382,10 @@ const schemas = [
       </div>
     </div>
   </section>
-  <div class="culture-divider" data-culture="maghreb" />
+  <div class="culture-divider hidden lg:block" data-culture="maghreb" />
 
   {/* SECTION ASIE */}
-  <section class="section bg-white pt-12 pb-10">
+  <section class="section bg-white pt-12 pb-10 hidden lg:block">
     <div class="container-mo">
       <div class="mb-8 text-left">
         <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveurs-asie']}`}>Saveurs d'Asie</span>
@@ -406,10 +406,27 @@ const schemas = [
       </div>
     </div>
   </section>
-  <div class="culture-divider" data-culture="asie" />
+  {/* Intermediate Logo signature area (Asie) */}
+  <div
+    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none bg-neutral-50/20"
+    style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.04) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
+  >
+    <div class="group relative block shrink-0">
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Marché de Mo'"
+        width="110"
+        height="110"
+        loading="lazy"
+        class="w-24 h-24 lg:w-28 lg:h-28 object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-300 bg-white rounded-full shadow-sm p-0.5"
+      />
+    </div>
+  </div>
+
+  <div class="culture-divider hidden lg:block" data-culture="asie" />
 
   {/* SECTION AFRIQUE & CRÉOLE */}
-  <section class="section bg-white pt-12 pb-10">
+  <section class="section bg-white pt-12 pb-10 hidden lg:block">
     <div class="container-mo">
       <div class="mb-8 text-left">
         <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveurs-afrique']}`}>Saveurs d'Afrique &amp; Antilles</span>
@@ -430,10 +447,10 @@ const schemas = [
       </div>
     </div>
   </section>
-  <div class="culture-divider" data-culture="afrique" />
+  <div class="culture-divider hidden lg:block" data-culture="afrique" />
 
   {/* SECTION INDE */}
-  <section class="section bg-white pt-12 pb-10">
+  <section class="section bg-white pt-12 pb-10 hidden lg:block">
     <div class="container-mo">
       <div class="mb-8 text-left">
         <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['epices-du-monde']}`}>Inde &amp; Épices du Monde</span>
@@ -454,10 +471,10 @@ const schemas = [
       </div>
     </div>
   </section>
-  <div class="culture-divider" data-culture="inde" />
+  <div class="culture-divider hidden lg:block" data-culture="inde" />
 
   {/* SECTION ITALIE */}
-  <section class="section bg-white pt-12 pb-10">
+  <section class="section bg-white pt-12 pb-10 hidden lg:block">
     <div class="container-mo">
       <div class="mb-8 text-left">
         <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveur-mediterranee']}`}>Gastronomie Italienne</span>
@@ -478,10 +495,27 @@ const schemas = [
       </div>
     </div>
   </section>
-  <div class="culture-divider" data-culture="italie" />
+  {/* Intermediate Logo signature area (Italie) */}
+  <div
+    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none bg-neutral-50/20"
+    style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.04) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
+  >
+    <div class="group relative block shrink-0">
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Marché de Mo'"
+        width="110"
+        height="110"
+        loading="lazy"
+        class="w-24 h-24 lg:w-28 lg:h-28 object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-300 bg-white rounded-full shadow-sm p-0.5"
+      />
+    </div>
+  </div>
+
+  <div class="culture-divider hidden lg:block" data-culture="italie" />
 
   {/* ====================== 8 · EDITORIAL NEWS & TIKTOK VIDEOS ====================== */}
-  <section class="section bg-white relative overflow-hidden py-12">
+  <section class="section bg-white relative overflow-hidden py-12 hidden lg:block">
     <div class="container-mo">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal text-left">
         <div class="max-w-2xl">
@@ -503,7 +537,7 @@ const schemas = [
   </section>
 
   {videos.length > 0 && (
-    <section class="section bg-blanc animate-fade-up py-12 border-t border-neutral-100">
+    <section class="section bg-blanc animate-fade-up py-12 border-t border-neutral-100 hidden lg:block">
       <div class="container-mo">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal text-left">
           <div class="max-w-2xl">
@@ -521,12 +555,9 @@ const schemas = [
           {videos.slice(0, 3).map((v) => {
             return (
               <LocalVideoPlayer
-                id={v.id}
                 title={v.data.titre}
-                poster={v.data.poster}
-                src={v.data.url_video}
+                src={v.data.src_local || ""}
                 href={v.data.url_tiktok}
-                duration={v.data.duree}
               />
             );
           })}
@@ -536,7 +567,7 @@ const schemas = [
   )}
 
   {/* ====================== 9 · LE MAGASIN TOULOUSE SUD ====================== */}
-  <section class="section bg-white border-t border-b border-neutral-100 py-14">
+  <section class="section bg-white border-t border-b border-neutral-100 py-14 hidden lg:block">
     <div class="container-mo">
       <div class="text-center max-w-3xl mx-auto mb-14 reveal">
         <span class="eyebrow !justify-center">Notre magasin</span>
@@ -619,10 +650,12 @@ const schemas = [
   </section>
 
   {/* ====================== NEWSLETTER ====================== */}
-  <NewsletterInline variant="dark" />
+  <div class="hidden lg:block">
+    <NewsletterInline variant="dark" />
+  </div>
 
   {/* ====================== 10 · NOS 4 ENGAGEMENTS (Restauration V2) ====================== */}
-  <section class="section bg-white py-14 border-b border-neutral-100">
+  <section class="section bg-white py-14 border-b border-neutral-100 hidden lg:block">
     <div class="container-mo">
       <div class="text-center max-w-3xl mx-auto mb-14 reveal">
         <span class="eyebrow !justify-center">Nos 4 engagements</span>
@@ -673,7 +706,7 @@ const schemas = [
 
   {/* Intermediate Logo signature area 2 (Break after engagements) */}
   <div
-    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
+    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
     style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
   >
     <div class="group relative block shrink-0">
@@ -689,7 +722,7 @@ const schemas = [
   </div>
 
   {/* ====================== SUGGESTIONS FORM ====================== */}
-  <section id="suggestions" class="section bg-white scroll-mt-24">
+  <section id="suggestions" class="section bg-white scroll-mt-24 hidden lg:block">
     <div class="container-mo">
       <div class="relative overflow-hidden rounded-3xl p-8 md:p-12 bg-neutral-50 border border-black/5">
         <!-- Decorative Mo' watermark -->
@@ -806,7 +839,9 @@ const schemas = [
   </script>
 
   {/* ====================== FAQ Accordion ====================== */}
-  <FAQAccordion items={FAQ_HOME} />
+  <div class="hidden lg:block">
+    <FAQAccordion items={FAQ_HOME} />
+  </div>
 </Layout>
 
 <!-- Promotions Autoplay and Translation Animation script -->

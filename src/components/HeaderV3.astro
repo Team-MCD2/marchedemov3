@@ -29,55 +29,11 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 };
 ---
 
-<header id="site-header" class="w-full z-50 bg-white relative font-pro">
-  <!-- ==================== 0. TOP INFO BAR ==================== -->
-  <!-- Desktop Top Bar -->
-  <div class="w-full bg-[color:var(--color-header-bg)] text-white text-[12.5px] py-2 px-4 select-none transition-colors duration-300 hidden lg:block">
-    <div class="max-w-[1536px] mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-6">
-        <a href="/service-client" class="hover:text-vert-light transition-colors">Aide & Contact</a>
-        <a href="/notre-enseigne" class="hover:text-vert-light transition-colors">Qui sommes-nous ?</a>
-        <a href="/programme-fidelite" class="hover:text-vert-light transition-colors flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-rouge animate-pulse"></span>
-          Carte Marché de Mo'
-        </a>
-      </div>
-      
-      <!-- Mon Magasin Button -->
-      <button 
-        id="mon-magasin-btn" 
-        class="flex items-center gap-2 bg-black/35 hover:bg-black/50 px-3 py-1 rounded-full text-white font-bold transition-all"
-        aria-label="Voir les détails du magasin"
-      >
-        <svg class="w-4 h-4 text-vert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-          <circle cx="12" cy="10" r="3" />
-        </svg>
-        <span>Mon magasin : <strong class="text-vert">Toulouse Sud</strong></span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Mobile Top Info Bar (Click & Collect style adapted to MDM - no Click&Collect) -->
-  <div class="w-full bg-[color:var(--color-header-bg)] text-white text-[12px] py-2 px-3.5 transition-colors duration-300 lg:hidden border-b border-neutral-800">
-    <div class="flex items-center justify-between gap-3 text-left">
-      <span class="leading-tight text-neutral-300 font-medium">
-        Découvrez nos prospectus et arrivages de la semaine en stock
-      </span>
-      <button 
-        id="mobile-magasin-top-btn" 
-        class="bg-white hover:bg-neutral-100 text-[11px] font-black text-vert px-3 py-1.5 rounded-full shadow shrink-0 whitespace-nowrap transition-all"
-        aria-label="Voir les détails du magasin"
-      >
-        Toulouse Sud
-      </button>
-    </div>
-  </div>
-
+<header id="site-header" class="w-full z-50 bg-white lg:sticky lg:top-0 lg:shadow-sm transition-all duration-300 font-pro">
   <!-- ==================== 1. MAIN HEADER ROW ==================== -->
   <!-- Desktop Main White Bar -->
-  <div class="w-full bg-white border-b border-neutral-100 py-3.5 px-4 shadow-sm hidden lg:block">
-    <div class="max-w-[1536px] mx-auto flex items-center gap-5 lg:gap-8">
+  <div class="w-full bg-white border-b border-neutral-100 py-3.5 shadow-sm hidden lg:block">
+    <div class="w-full max-w-[1760px] mx-auto px-4 md:px-6 lg:px-6 flex items-center gap-5 lg:gap-8">
       
       <!-- Burger Rayons -->
       <button 
@@ -274,8 +230,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 
   <!-- ==================== 2. SUB-HEADER / QUICK ACCESS ==================== -->
   <!-- Desktop Sub-Header Category Bar -->
-  <div class="w-full bg-neutral-50 border-b border-neutral-200/70 overflow-x-auto scrollbar-hide py-2.5 px-4 select-none hidden lg:block">
-    <div class="max-w-[1536px] mx-auto flex items-center gap-2 md:gap-4 text-[13.5px] font-bold font-soft whitespace-nowrap">
+  <div class="w-full bg-neutral-50 border-b border-neutral-200/70 overflow-x-auto scrollbar-hide py-2.5 select-none hidden lg:block">
+    <div class="w-full max-w-[1760px] mx-auto px-4 md:px-6 lg:px-6 flex items-center gap-2 md:gap-4 text-[13.5px] font-bold font-soft whitespace-nowrap">
       <a href="/promos" class="text-rouge hover:text-rouge-dark pr-3 border-r border-neutral-300 transition-colors flex items-center gap-1">
         <span class="inline-block w-1.5 h-1.5 rounded-full bg-rouge animate-ping"></span>
         Promotions
@@ -367,7 +323,7 @@ const CATEGORY_ACCENTS: Record<string, string> = {
       </div>
 
       <!-- Row 2: Active Search Bar inside Drawer Menu -->
-      <div class="p-3 bg-white border-b border-neutral-100">
+      <div id="drawer-search-row-v3" class="p-3 bg-white border-b border-neutral-100">
         <div class="relative w-full">
           <input 
             id="drawer-search-input-v3" 
@@ -398,6 +354,19 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 
       <!-- Main Navigation Menu Structure (Hidden when searching) -->
       <div id="drawer-navigation-main-v3" class="space-y-3">
+        <!-- 0. Mon Magasin (Toulouse Sud) -->
+        <button 
+          id="drawer-magasin-btn" 
+          class="w-full flex items-center justify-between p-3.5 bg-vert/5 hover:bg-vert/10 text-vert font-black rounded-xl transition-all border border-vert/15 mb-2 btn-mobile-modal-trigger text-[14px]"
+          type="button"
+        >
+          <span class="flex items-center gap-2.5">
+            <span class="text-[16px]">📍</span>
+            <span>Mon magasin : <strong>Toulouse Sud</strong></span>
+          </span>
+          <span class="text-[9px] uppercase font-black tracking-wider bg-vert text-white px-2 py-0.5 rounded-full shadow-sm">Horaires</span>
+        </button>
+
         <!-- 1. Promotions (Nos Offres de la semaine) -->
         <a 
           href="/promos" 
@@ -455,7 +424,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
         <div class="grid grid-cols-2 gap-2 text-[12.5px] font-bold text-neutral-600">
           <a href="/recrutement" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center">Recrutement</a>
           <a href="/actualites" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center">Actualités</a>
-          <a href="/notre-enseigne" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center col-span-2">Notre Enseigne</a>
+          <a href="/notre-enseigne" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center">Qui sommes-nous ?</a>
+          <a href="/service-client" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center">Aide & Contact</a>
         </div>
 
         <div class="h-px bg-neutral-200 my-2"></div>
@@ -630,11 +600,36 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     scrollbar-width: none;
   }
 
-  /* Mobile drawer transition overrides for E.Leclerc drawer */
+   /* Mobile drawer transition overrides for E.Leclerc drawer */
   @media (max-width: 1023px) {
     #drawer-sidebar-rayons {
       width: 100vw !important;
       max-width: 100% !important;
+    }
+    
+    /* Sticky mobile search overrides when drawer is open */
+    #site-header.drawer-open #header-row-mobile-v3 {
+      display: none !important;
+    }
+    #site-header.drawer-open #mobile-search-row-v3 {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      z-index: 105 !important;
+    }
+    #site-header.drawer-open #drawer-sidebar-rayons {
+      top: 58px !important;
+      height: calc(100vh - 58px) !important;
+      z-index: 100 !important;
+    }
+    #site-header.drawer-open #drawer-backdrop {
+      top: 58px !important;
+      height: calc(100vh - 58px) !important;
+      z-index: 95 !important;
+    }
+    #drawer-search-row-v3 {
+      display: none !important;
     }
   }
 </style>
@@ -683,6 +678,7 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 
   const setupHeaderV3 = () => {
     // Menu Drawer DOM selectors
+    const headerEl = document.getElementById("site-header");
     const burgerDesktop = document.getElementById("burger-btn-v3");
     const burgerMobile = document.getElementById("burger-btn-mobile-v3");
     const drawer = document.getElementById("drawer-sidebar-rayons");
@@ -693,7 +689,7 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     const storeBtn = document.getElementById("mon-magasin-btn");
     const storeTopMobileBtn = document.getElementById("mobile-magasin-top-btn");
     const storeIconMobileBtn = document.getElementById("mobile-magasins-icon-v3");
-    const storeMobileModalTrigger = document.querySelector(".btn-mobile-modal-trigger");
+    const storeMobileModalTriggers = document.querySelectorAll(".btn-mobile-modal-trigger");
     const modal = document.getElementById("store-detail-modal");
     const modalCloseBg = document.getElementById("store-modal-close-bg");
     const modalCloseBtn = document.getElementById("store-modal-close-btn");
@@ -716,6 +712,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
       backdrop?.classList.remove("opacity-0", "pointer-events-none");
       backdrop?.classList.add("opacity-100", "pointer-events-auto");
       burgerDesktop?.classList.add("is-active");
+      headerEl?.classList.add("drawer-open");
+      document.body.classList.add("overflow-hidden");
     };
 
     const closeDrawer = () => {
@@ -723,6 +721,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
       backdrop?.classList.remove("opacity-100", "pointer-events-auto");
       backdrop?.classList.add("opacity-0", "pointer-events-none");
       burgerDesktop?.classList.remove("is-active");
+      headerEl?.classList.remove("drawer-open");
+      document.body.classList.remove("overflow-hidden");
     };
 
     if (burgerDesktop) {
@@ -763,7 +763,9 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     if (storeBtn) storeBtn.onclick = openModal;
     if (storeTopMobileBtn) storeTopMobileBtn.onclick = openModal;
     if (storeIconMobileBtn) storeIconMobileBtn.onclick = openModal;
-    if (storeMobileModalTrigger) (storeMobileModalTrigger as HTMLElement).onclick = openModal;
+    storeMobileModalTriggers.forEach((trigger) => {
+      (trigger as HTMLElement).onclick = openModal;
+    });
 
     if (modalCloseBg) modalCloseBg.onclick = closeModal;
     if (modalCloseBtn) modalCloseBtn.onclick = closeModal;
