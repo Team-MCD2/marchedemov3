@@ -1,0 +1,59 @@
+import { d as createAstro, c as createComponent, r as renderTemplate, b as addAttribute, m as maybeRenderHead } from './astro/server_BQgcolZ2.mjs';
+import 'kleur/colors';
+import 'clsx';
+
+var __freeze = Object.freeze;
+var __defProp = Object.defineProperty;
+var __template = (cooked, raw) => __freeze(__defProp(cooked, "raw", { value: __freeze(cooked.slice()) }));
+var _a;
+const $$Astro = createAstro("https://marchedemov2.vercel.app");
+const $$NewsletterInline = createComponent(async ($$result, $$props, $$slots) => {
+  const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
+  Astro2.self = $$NewsletterInline;
+  const { variant = "light", compact = false } = Astro2.props;
+  const isDark = variant === "dark";
+  return renderTemplate(_a || (_a = __template(["", "<section", '> <div class="container-mo"> <div', `> <!-- Decorative Mo' watermark --> <img src="/logos/favicon-marchedemo-contourwh.png" alt="" aria-hidden="true" class="absolute -right-12 -bottom-12 w-64 opacity-[0.04] pointer-events-none"> <div class="relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-16 items-center"> <div> <span`, ">-20% sur votre prochain caddie</span> <h2", ">\nAbonnez-vous et \xE9conomisez.\n</h2> <p", '>\nRecevez nos promos hebdo, nos nouveaut\xE9s et nos coups de c\u0153ur produits\n            directement par email. <strong>Z\xE9ro spam</strong> \u2014 d\xE9sinscription en un clic.\n</p> </div> <form method="POST" action="/api/newsletter" class="newsletter-inline-form flex flex-col md:flex-row gap-3"> <!-- Honeypot anti-spam --> <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; width: 0; height: 0; overflow: hidden; pointer-events: none;" aria-hidden="true"> <label for="phone_confirm_inline">Confirmer le num\xE9ro de t\xE9l\xE9phone</label> <input type="text" name="phone_confirm" id="phone_confirm_inline" tabindex="-1" autocomplete="off"> </div> <label class="sr-only" for="newsletter-email-inline">Votre email</label> <input id="newsletter-email-inline" type="email" name="email" required placeholder="votre@email.com"', `> <button type="submit" class="btn btn-primary whitespace-nowrap">
+S'abonner
+<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"> <path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path> </svg> </button> </form> </div> </div> </div> </section> <script>
+  document.addEventListener("astro:page-load", () => {
+    const forms = document.querySelectorAll(".newsletter-inline-form");
+    forms.forEach((form) => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const button = form.querySelector("button");
+        if (button) button.disabled = true;
+
+        try {
+          const formData = new FormData(form);
+          const email = formData.get("email");
+          const phone_confirm = formData.get("phone_confirm");
+
+          const res = await fetch("/api/newsletter", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, phone_confirm }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.error || "Une erreur est survenue.");
+          }
+
+          if (window.showToast) {
+            window.showToast("Merci pour votre abonnement ! -20% sur votre prochain caddie.", "success");
+          }
+          form.reset();
+        } catch (err) {
+          if (window.showToast) {
+            window.showToast(err.message, "error");
+          }
+        } finally {
+          if (button) button.disabled = false;
+        }
+      });
+    });
+  });
+<\/script>`])), maybeRenderHead(), addAttribute(`${compact ? "py-12" : "section"} ${isDark ? "bg-noir text-white" : "bg-white"}`, "class"), addAttribute(`relative overflow-hidden rounded-3xl p-8 md:p-14 ${isDark ? "bg-gradient-to-br from-[#0F0F0F] to-[#1A1A1A] border border-white/10" : "bg-white"}`, "class"), addAttribute(`eyebrow ${isDark ? "text-vert-light" : ""}`, "class"), addAttribute(`display-lg mt-4 text-balance ${isDark ? "!text-white" : ""}`, "class"), addAttribute(`mt-4 text-[15px] leading-relaxed max-w-md ${isDark ? "text-white/65" : "text-neutral-600"}`, "class"), addAttribute(`flex-1 rounded-full px-6 py-4 font-pro text-[15px] focus:outline-none focus:ring-2 focus:ring-vert/30 transition ${isDark ? "bg-white/10 text-white placeholder-white/50 border border-white/15" : "bg-white border border-neutral-200"}`, "class"));
+}, "C:/Users/Mommy Jayce/Desktop/Microdidact/MarchedemoV3/app/src/components/NewsletterInline.astro", void 0);
+
+export { $$NewsletterInline as $ };

@@ -1,11 +1,12 @@
 ---
 /**
  * HeaderV3 — E.Leclerc-style premium storefront header.
- * - Top sombre bar (`--color-header-bg`): Aux links + Toulouse Sud store button.
- * - Main white bar: Sidebar trigger, logo badge, central search bar, account/cart placeholders.
- * - Underline bar: Rayons quick access.
- * - Drawer: Slide-in rayons list from left with cultural decorations.
- * - Geolocation modal: Toulouse Sud store details (hours, map).
+ * - Top info bar (mon magasin: Toulouse Sud) - adapts to mobile (without Click&Collect)
+ * - Main bar & categories row: hidden on mobile, shown on desktop
+ * - Mobile layout: burger (MENU label), centered circular logo, pin/account/cart icons
+ * - Sticky mobile search bar at top of viewport on scroll
+ * - Sidebar Drawer: full screen on mobile, fixed header with close button, logo, icons, and drawer search bar.
+ *   - Scrollable content with Nos Offres (Promotions), Prospectus, Cart, Recettes, Devenir Franchisé, and Rayons.
  */
 import { RAYONS_LIST } from "@/lib/site";
 import { DEFAULT_STORE } from "@/lib/geo";
@@ -29,8 +30,9 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 ---
 
 <header id="site-header" class="w-full z-50 bg-white relative font-pro">
-  <!-- 1. Top Sombre Bar -->
-  <div class="w-full bg-[color:var(--color-header-bg)] text-white text-[12.5px] py-2 px-4 select-none transition-colors duration-300">
+  <!-- ==================== 0. TOP INFO BAR ==================== -->
+  <!-- Desktop Top Bar -->
+  <div class="w-full bg-[color:var(--color-header-bg)] text-white text-[12.5px] py-2 px-4 select-none transition-colors duration-300 hidden lg:block">
     <div class="max-w-[1536px] mx-auto flex items-center justify-between">
       <div class="flex items-center gap-6">
         <a href="/service-client" class="hover:text-vert-light transition-colors">Aide & Contact</a>
@@ -56,8 +58,25 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     </div>
   </div>
 
-  <!-- 2. Main White Bar -->
-  <div class="w-full bg-white border-b border-neutral-100 py-3.5 px-4 shadow-sm">
+  <!-- Mobile Top Info Bar (Click & Collect style adapted to MDM - no Click&Collect) -->
+  <div class="w-full bg-[color:var(--color-header-bg)] text-white text-[12px] py-2 px-3.5 transition-colors duration-300 lg:hidden border-b border-neutral-800">
+    <div class="flex items-center justify-between gap-3 text-left">
+      <span class="leading-tight text-neutral-300 font-medium">
+        Découvrez nos prospectus et arrivages de la semaine en stock
+      </span>
+      <button 
+        id="mobile-magasin-top-btn" 
+        class="bg-white hover:bg-neutral-100 text-[11px] font-black text-vert px-3 py-1.5 rounded-full shadow shrink-0 whitespace-nowrap transition-all"
+        aria-label="Voir les détails du magasin"
+      >
+        Toulouse Sud
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 1. MAIN HEADER ROW ==================== -->
+  <!-- Desktop Main White Bar -->
+  <div class="w-full bg-white border-b border-neutral-100 py-3.5 px-4 shadow-sm hidden lg:block">
     <div class="max-w-[1536px] mx-auto flex items-center gap-5 lg:gap-8">
       
       <!-- Burger Rayons -->
@@ -151,8 +170,111 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     </div>
   </div>
 
-  <!-- 3. Sub-Header Category Bar (Quick Access) -->
-  <div class="w-full bg-neutral-50 border-b border-neutral-200/70 overflow-x-auto scrollbar-hide py-2.5 px-4 select-none">
+  <!-- Mobile Main Header Row (Burger + Centered Logo + Icons) -->
+  <div 
+    id="header-row-mobile-v3"
+    class="lg:hidden w-full h-[72px] border-b border-black/5 bg-white flex items-center justify-between px-3 select-none relative z-20"
+  >
+    <!-- Left: Burger Menu Button -->
+    <button
+      id="burger-btn-mobile-v3"
+      aria-label="Ouvrir le menu"
+      class="flex flex-col items-center justify-center text-[#1052ba] active:scale-95 transition shrink-0 pr-1 select-none"
+    >
+      <div class="burger-icon relative w-5.5 h-4 flex flex-col justify-between mb-0.5 pointer-events-none">
+        <span class="bar w-full h-[2.5px] bg-[#1052ba] rounded-full transition-all duration-300"></span>
+        <span class="bar w-full h-[2.5px] bg-[#1052ba] rounded-full transition-all duration-300"></span>
+        <span class="bar w-full h-[2.5px] bg-[#1052ba] rounded-full transition-all duration-300"></span>
+      </div>
+      <span class="text-[9px] font-black uppercase text-[#1052ba] tracking-wider pointer-events-none">Menu</span>
+    </button>
+
+    <!-- Center: Centered Circular Logo -->
+    <a href="/" class="flex items-center justify-center select-none" title="Retour à l'accueil">
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Marché de Mo'"
+        width="48"
+        height="48"
+        class="w-[48px] h-[48px] object-contain bg-white rounded-full shadow-sm p-0.5"
+      />
+    </a>
+
+    <!-- Right: Leclerc Style Icons Placed on Mobile Right -->
+    <div class="flex items-center gap-2.5 shrink-0">
+      <!-- Geolocation Pin (Triggers hours modal) -->
+      <button
+        id="mobile-magasins-icon-v3"
+        class="w-9 h-9 rounded-full bg-neutral-50 border border-neutral-200/50 flex items-center justify-center text-[#1052ba] active:bg-neutral-100 transition-colors"
+        title="Toulouse Sud"
+        aria-label="Toulouse Sud"
+      >
+        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+      </button>
+
+      <!-- Account placeholder -->
+      <div
+        class="w-9 h-9 rounded-full bg-neutral-50 border border-neutral-200/50 flex items-center justify-center text-[#1052ba] opacity-60 cursor-not-allowed"
+        title="Mon compte"
+      >
+        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
+
+      <!-- Cart placeholder -->
+      <div
+        class="w-9 h-9 rounded-full bg-neutral-50 border border-neutral-200/50 flex items-center justify-center text-[#1052ba] opacity-60 cursor-not-allowed"
+        title="Mon panier"
+      >
+        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="9" cy="21" r="1" />
+          <circle cx="20" cy="21" r="1" />
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Search Row (Sticky top-0 on mobile scroll) -->
+  <div 
+    id="mobile-search-row-v3"
+    class="lg:hidden sticky top-0 z-40 bg-white border-b border-neutral-200 py-2.5 px-3 shadow-sm select-none transition-all duration-300"
+  >
+    <div class="relative w-full">
+      <input 
+        id="mobile-search-input-v3" 
+        type="text" 
+        placeholder="Que recherchez-vous ?" 
+        class="w-full pl-5 pr-12 py-2.5 bg-neutral-50 text-[14px] font-medium text-neutral-900 rounded-full border border-neutral-250 outline-none focus:bg-white focus:border-vert focus:ring-2 focus:ring-vert/15 transition-all placeholder-neutral-400"
+        autocomplete="off"
+      />
+      <button class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#1052ba] hover:bg-[#0f46a0] text-white flex items-center justify-center transition-colors shadow-sm active:scale-95" aria-label="Rechercher">
+        <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Mobile Search Suggestions Overlay -->
+    <div 
+      id="mobile-search-suggestions-v3" 
+      class="absolute top-full left-0 right-0 mt-2 mx-3 bg-white rounded-2xl shadow-2xl border border-neutral-200/80 p-4 max-h-[60vh] overflow-y-auto z-50 hidden opacity-0 transition-opacity duration-200"
+    >
+      <div class="text-center py-6 text-neutral-500 text-[13.5px]">
+        Saisissez un mot pour rechercher...
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. SUB-HEADER / QUICK ACCESS ==================== -->
+  <!-- Desktop Sub-Header Category Bar -->
+  <div class="w-full bg-neutral-50 border-b border-neutral-200/70 overflow-x-auto scrollbar-hide py-2.5 px-4 select-none hidden lg:block">
     <div class="max-w-[1536px] mx-auto flex items-center gap-2 md:gap-4 text-[13.5px] font-bold font-soft whitespace-nowrap">
       <a href="/promos" class="text-rouge hover:text-rouge-dark pr-3 border-r border-neutral-300 transition-colors flex items-center gap-1">
         <span class="inline-block w-1.5 h-1.5 rounded-full bg-rouge animate-ping"></span>
@@ -169,57 +291,210 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     </div>
   </div>
 
-  <!-- 4. Sidebar Rayons Navigation Drawer -->
+  <!-- Mobile Category Horizontal Scroll bar -->
+  <div class="w-full bg-neutral-50 border-b border-neutral-200/70 overflow-x-auto scrollbar-hide py-2 px-3.5 select-none lg:hidden">
+    <div class="flex items-center gap-2.5 text-[12.5px] font-bold font-soft whitespace-nowrap">
+      <a href="/promos" class="text-rouge hover:text-rouge-dark pr-2 border-r border-neutral-350 transition-colors flex items-center gap-1">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-rouge animate-ping"></span>
+        Promotions
+      </a>
+      {RAYONS_LIST.map((r) => (
+        <a 
+          href={`/rayons/${r.slug}`} 
+          class="text-neutral-700 hover:text-vert px-2.5 py-0.5 rounded-full hover:bg-neutral-200/50 transition-all"
+        >
+          {r.nomCourt}
+        </a>
+      ))}
+    </div>
+  </div>
+
+  <!-- ==================== 3. MENU DRAWER (Hamburger Menu) ==================== -->
+  <!-- Sidebar Rayons Navigation Drawer -->
   <div 
     id="drawer-sidebar-rayons" 
-    class="fixed inset-y-0 left-0 w-[350px] max-w-[85vw] bg-white shadow-2xl border-r border-neutral-200/80 z-[100] transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col font-pro"
+    class="fixed inset-y-0 left-0 w-full lg:w-[380px] bg-white shadow-2xl border-r border-neutral-200/80 z-[100] transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col font-pro"
   >
-    <!-- Drawer Header -->
-    <div class="p-5 border-b border-neutral-100 flex items-center justify-between bg-vert text-white">
-      <div class="flex items-center gap-3">
-        <img src="/logos/logo-marchedemo-rec-contourwh.png" alt="" class="h-6 w-auto object-contain" />
-        <span class="font-soft font-bold text-[16px] tracking-wide">Rayons du Monde</span>
+    <!-- Drawer Fixed Header (Does not scroll) -->
+    <div class="bg-white border-b border-neutral-200 flex flex-col shrink-0 select-none">
+      <!-- Row 1: Close button, Centered Logo, Icons -->
+      <div class="flex items-center justify-between px-3 h-[60px] border-b border-neutral-100 bg-neutral-50/50">
+        <!-- Close button -->
+        <button 
+          id="drawer-close-btn-v3" 
+          class="w-10 h-10 flex items-center justify-center text-neutral-800 hover:text-vert transition-colors text-[20px] font-bold" 
+          aria-label="Fermer le menu"
+        >
+          ✕
+        </button>
+
+        <!-- Centered Logo -->
+        <a href="/" class="flex items-center justify-center">
+          <img
+            src="/logos/logo-marchedemo-rond-contourgreen.png"
+            alt="Marché de Mo'"
+            width="44"
+            height="44"
+            class="w-[44px] h-[44px] object-contain bg-white rounded-full shadow-sm p-0.5"
+          />
+        </a>
+
+        <!-- Right icons placeholders for Leclerc layout -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            class="w-8 h-8 rounded-full flex items-center justify-center text-[#1052ba] active:bg-neutral-100 transition-colors btn-mobile-modal-trigger"
+            aria-label="Détails magasin"
+          >
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+          </button>
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-[#1052ba] opacity-60">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-[#1052ba] opacity-60">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+          </div>
+        </div>
       </div>
-      <button id="drawer-close-btn" class="p-2 hover:bg-black/10 rounded-full transition-colors text-white font-bold text-[18px]" aria-label="Fermer le menu">
-        ✕
-      </button>
+
+      <!-- Row 2: Active Search Bar inside Drawer Menu -->
+      <div class="p-3 bg-white border-b border-neutral-100">
+        <div class="relative w-full">
+          <input 
+            id="drawer-search-input-v3" 
+            type="text" 
+            placeholder="Que recherchez-vous ?" 
+            class="w-full pl-4 pr-10 py-2.5 bg-neutral-50 text-[13.5px] text-neutral-900 rounded-full border border-neutral-200 outline-none focus:bg-white focus:border-vert transition-all placeholder-neutral-400"
+            autocomplete="off"
+          />
+          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-vert" aria-label="Rechercher">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Drawer Content (With Cultural Motifs as Subtle Backgrounds) -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-2 relative" id="drawer-rayons-list">
+    <!-- Drawer Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3 relative bg-white" id="drawer-scrollable-content-v3">
       <!-- Cultural background SVG element -->
-      <div class="absolute inset-0 opacity-[0.035] pointer-events-none bg-no-repeat bg-right-top" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 160\"><path d=\"M160 0 Q100 40 70 110 M160 0 C130 15 105 10 80 5\" stroke=\"%231C6B35\" stroke-width=\"2.5\" fill=\"none\"/></svg>');"></div>
+      <div class="absolute inset-0 opacity-[0.02] pointer-events-none bg-no-repeat bg-right-top" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 160\"><path d=\"M160 0 Q100 40 70 110 M160 0 C130 15 105 10 80 5\" stroke=\"%231C6B35\" stroke-width=\"2.5\" fill=\"none\"/></svg>');"></div>
       
-      <a href="/produits" class="flex items-center justify-between p-3.5 bg-vert/5 hover:bg-vert/10 text-vert font-black rounded-xl transition-all border border-vert/10">
-        <span>Tous les produits</span>
-        <span>→</span>
-      </a>
+      <!-- Drawer Active Search Results Container -->
+      <div id="drawer-search-results-v3" class="hidden space-y-3.5">
+        <!-- Results injected here -->
+      </div>
 
-      <div class="h-px bg-neutral-200 my-3"></div>
+      <!-- Main Navigation Menu Structure (Hidden when searching) -->
+      <div id="drawer-navigation-main-v3" class="space-y-3">
+        <!-- 1. Promotions (Nos Offres de la semaine) -->
+        <a 
+          href="/promos" 
+          class="flex items-center justify-between p-3.5 bg-rouge/5 hover:bg-rouge/10 text-rouge font-black rounded-xl transition-all border border-rouge/10"
+        >
+          <span class="flex items-center gap-2">
+            <span class="inline-block w-2 h-2 rounded-full bg-rouge animate-ping"></span>
+            Promotions de la semaine
+          </span>
+          <span class="text-[10px] font-black bg-rouge text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Offres</span>
+        </a>
 
-      {RAYONS_LIST.map((r) => {
-        const accent = CATEGORY_ACCENTS[r.slug] || "#1C6B35";
-        return (
-          <a 
-            href={`/rayons/${r.slug}`}
-            class="group flex items-center gap-3.5 p-3 rounded-xl hover:bg-neutral-50 transition-all border border-transparent hover:border-neutral-100"
-            data-culture={r.slug.replace("saveurs-", "").replace("saveur-", "")}
-          >
-            <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 transition-transform group-hover:scale-110" style={`background-color: ${accent}`}></span>
-            <div class="min-w-0 flex-1">
-              <div class="text-[14.5px] font-bold text-neutral-800 group-hover:text-vert transition-colors">{r.nom}</div>
-              {r.tagline && <div class="text-[11.5px] text-neutral-600 truncate">{r.tagline}</div>}
-            </div>
-            <svg class="w-4 h-4 text-neutral-400 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14M13 5l7 7-7 7" />
-            </svg>
+        <!-- 2. Catalogues & Prospectus -->
+        <a 
+          href="/promos" 
+          class="flex items-center gap-3.5 p-3 text-neutral-800 hover:bg-neutral-50 rounded-xl transition-all border border-neutral-100 font-bold text-[14px]"
+        >
+          <span class="w-8 h-8 rounded-lg bg-blue-50 text-[#1052ba] flex items-center justify-center text-[15px]">📖</span>
+          <span>Catalogues & Prospectus</span>
+        </a>
+
+        <!-- 3. Carte Fidélité -->
+        <a 
+          href="/programme-fidelite" 
+          class="flex items-center gap-3.5 p-3 text-neutral-800 hover:bg-neutral-50 rounded-xl transition-all border border-neutral-100 font-bold text-[14px]"
+        >
+          <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-[15px]">💳</span>
+          <span>Carte de Fidélité</span>
+        </a>
+
+        <!-- 4. Idées Recettes -->
+        <a 
+          href="/recettes" 
+          class="flex items-center gap-3.5 p-3 text-neutral-800 hover:bg-neutral-50 rounded-xl transition-all border border-neutral-100 font-bold text-[14px]"
+        >
+          <span class="w-8 h-8 rounded-lg bg-vert/10 text-vert flex items-center justify-center text-[15px]">🍳</span>
+          <span>Recettes du Monde</span>
+        </a>
+
+        <!-- 5. Devenir Franchisé (Standout V2 style link) -->
+        <a 
+          href="/franchise" 
+          class="flex items-center justify-between p-3.5 bg-vert/5 hover:bg-vert/10 text-vert font-black rounded-xl transition-all border border-vert/15 hover:scale-[1.01]"
+        >
+          <span class="flex items-center gap-2.5">
+            <span class="text-[16px]">🤝</span>
+            <span>Devenir Franchisé</span>
+          </span>
+          <span class="text-[9px] uppercase font-black tracking-wider bg-vert text-white px-2.5 py-0.5 rounded-full shadow-sm">Partenaire</span>
+        </a>
+
+        <div class="h-px bg-neutral-200 my-2"></div>
+
+        <!-- 6. Secondary Links -->
+        <div class="grid grid-cols-2 gap-2 text-[12.5px] font-bold text-neutral-600">
+          <a href="/recrutement" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center">Recrutement</a>
+          <a href="/actualites" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center">Actualités</a>
+          <a href="/notre-enseigne" class="p-2.5 hover:bg-neutral-50 hover:text-vert rounded-lg transition-colors border border-neutral-100 text-center col-span-2">Notre Enseigne</a>
+        </div>
+
+        <div class="h-px bg-neutral-200 my-2"></div>
+
+        <div class="text-[11.5px] font-black text-neutral-450 uppercase tracking-widest pl-2 mb-2 select-none">
+          Commander en ligne
+        </div>
+
+        <!-- Rayons list -->
+        <div class="space-y-1">
+          <a href="/produits" class="flex items-center justify-between p-3 bg-vert/5 hover:bg-vert/10 text-vert font-black rounded-xl transition-all border border-vert/10">
+            <span>Tous les produits</span>
+            <span>→</span>
           </a>
-        );
-      })}
+
+          {RAYONS_LIST.map((r) => {
+            const accent = CATEGORY_ACCENTS[r.slug] || "#1C6B35";
+            return (
+              <a 
+                href={`/rayons/${r.slug}`}
+                class="group flex items-center justify-between p-3 rounded-xl hover:bg-neutral-50 transition-all border border-transparent hover:border-neutral-100"
+                data-culture={r.slug.replace("saveurs-", "").replace("saveur-", "")}
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-3 h-3 rounded-full flex-shrink-0" style={`background-color: ${accent}`}></span>
+                  <span class="text-[14px] font-bold text-neutral-800 group-hover:text-vert transition-colors truncate">{r.nom}</span>
+                </div>
+                <svg class="w-4 h-4 text-neutral-400 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            );
+          })}
+        </div>
+      </div>
     </div>
     
     <!-- Drawer Footer -->
-    <div class="p-4 border-t border-neutral-100 bg-neutral-50 text-center text-[11px] text-neutral-600 uppercase tracking-widest font-black">
+    <div class="p-4 border-t border-neutral-100 bg-neutral-50 text-center text-[11px] text-neutral-600 uppercase tracking-widest font-black shrink-0">
       Marché de Mo' · Toulouse Sud
     </div>
   </div>
@@ -354,6 +629,14 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Mobile drawer transition overrides for E.Leclerc drawer */
+  @media (max-width: 1023px) {
+    #drawer-sidebar-rayons {
+      width: 100vw !important;
+      max-width: 100% !important;
+    }
+  }
 </style>
 
 <script>
@@ -400,42 +683,60 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 
   const setupHeaderV3 = () => {
     // Menu Drawer DOM selectors
-    const burger = document.getElementById("burger-btn-v3");
+    const burgerDesktop = document.getElementById("burger-btn-v3");
+    const burgerMobile = document.getElementById("burger-btn-mobile-v3");
     const drawer = document.getElementById("drawer-sidebar-rayons");
     const backdrop = document.getElementById("drawer-backdrop");
-    const closeBtn = document.getElementById("drawer-close-btn");
+    const closeBtn = document.getElementById("drawer-close-btn-v3");
 
     // Modal DOM selectors
     const storeBtn = document.getElementById("mon-magasin-btn");
+    const storeTopMobileBtn = document.getElementById("mobile-magasin-top-btn");
+    const storeIconMobileBtn = document.getElementById("mobile-magasins-icon-v3");
+    const storeMobileModalTrigger = document.querySelector(".btn-mobile-modal-trigger");
     const modal = document.getElementById("store-detail-modal");
     const modalCloseBg = document.getElementById("store-modal-close-bg");
     const modalCloseBtn = document.getElementById("store-modal-close-btn");
     const modalCloseFooter = document.getElementById("store-modal-close-footer");
 
-    // Search selectors
-    const searchInput = document.getElementById("desktop-search-input-v3") as HTMLInputElement | null;
-    const searchSuggestions = document.getElementById("desktop-search-suggestions-v3") as HTMLElement | null;
+    // Search input selectors
+    const desktopSearch = document.getElementById("desktop-search-input-v3") as HTMLInputElement | null;
+    const desktopSuggestions = document.getElementById("desktop-search-suggestions-v3") as HTMLElement | null;
+
+    const mobileSearch = document.getElementById("mobile-search-input-v3") as HTMLInputElement | null;
+    const mobileSuggestions = document.getElementById("mobile-search-suggestions-v3") as HTMLElement | null;
+
+    const drawerSearch = document.getElementById("drawer-search-input-v3") as HTMLInputElement | null;
+    const drawerSearchResults = document.getElementById("drawer-search-results-v3") as HTMLElement | null;
+    const drawerNavigationMain = document.getElementById("drawer-navigation-main-v3") as HTMLElement | null;
 
     // A. Drawer Listeners
     const openDrawer = () => {
       drawer?.classList.remove("-translate-x-full");
       backdrop?.classList.remove("opacity-0", "pointer-events-none");
       backdrop?.classList.add("opacity-100", "pointer-events-auto");
-      burger?.classList.add("is-active");
+      burgerDesktop?.classList.add("is-active");
     };
 
     const closeDrawer = () => {
       drawer?.classList.add("-translate-x-full");
       backdrop?.classList.remove("opacity-100", "pointer-events-auto");
       backdrop?.classList.add("opacity-0", "pointer-events-none");
-      burger?.classList.remove("is-active");
+      burgerDesktop?.classList.remove("is-active");
     };
 
-    if (burger) {
-      burger.onclick = (e) => {
+    if (burgerDesktop) {
+      burgerDesktop.onclick = (e) => {
         e.stopPropagation();
         const isOpen = !drawer?.classList.contains("-translate-x-full");
         if (isOpen) closeDrawer(); else openDrawer();
+      };
+    }
+
+    if (burgerMobile) {
+      burgerMobile.onclick = (e) => {
+        e.stopPropagation();
+        openDrawer();
       };
     }
 
@@ -460,33 +761,40 @@ const CATEGORY_ACCENTS: Record<string, string> = {
     };
 
     if (storeBtn) storeBtn.onclick = openModal;
+    if (storeTopMobileBtn) storeTopMobileBtn.onclick = openModal;
+    if (storeIconMobileBtn) storeIconMobileBtn.onclick = openModal;
+    if (storeMobileModalTrigger) (storeMobileModalTrigger as HTMLElement).onclick = openModal;
+
     if (modalCloseBg) modalCloseBg.onclick = closeModal;
     if (modalCloseBtn) modalCloseBtn.onclick = closeModal;
     if (modalCloseFooter) modalCloseFooter.onclick = closeModal;
 
-    // C. Search Autocomplete suggestions rendering
-    const showSuggestions = () => {
-      searchSuggestions?.classList.remove("opacity-0", "scale-95", "pointer-events-none");
-      searchSuggestions?.classList.add("opacity-100", "scale-100", "pointer-events-auto");
-    };
-
-    const hideSuggestions = () => {
-      searchSuggestions?.classList.add("opacity-0", "scale-95", "pointer-events-none");
-      searchSuggestions?.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
-    };
-
-    const performSearchV3 = (query: string) => {
+    // C. Autocomplete suggestions rendering (unified search)
+    const performSearchV3General = (query: string, suggestionsContainer: HTMLElement | null, resultsType: "desktop" | "mobile" | "drawer") => {
       const trimmed = query.trim();
       if (trimmed.length === 0) {
-        hideSuggestions();
+        if (resultsType === "drawer") {
+          if (drawerNavigationMain) drawerNavigationMain.style.display = "block";
+          if (drawerSearchResults) drawerSearchResults.style.display = "none";
+        } else {
+          suggestionsContainer?.classList.add("opacity-0", "scale-95", "pointer-events-none");
+          suggestionsContainer?.classList.remove("opacity-100", "scale-100", "pointer-events-auto", "block");
+          if (resultsType === "mobile") suggestionsContainer?.classList.add("hidden");
+        }
         return;
       }
 
-      showSuggestions();
+      if (resultsType === "drawer") {
+        if (drawerNavigationMain) drawerNavigationMain.style.display = "none";
+        if (drawerSearchResults) drawerSearchResults.style.display = "block";
+      } else {
+        suggestionsContainer?.classList.remove("opacity-0", "scale-95", "pointer-events-none", "hidden");
+        suggestionsContainer?.classList.add("opacity-100", "scale-100", "pointer-events-auto", "block");
+      }
 
       if (!searchIndex || !fuseProduits) {
-        if (searchSuggestions) {
-          searchSuggestions.innerHTML = `
+        if (suggestionsContainer) {
+          suggestionsContainer.innerHTML = `
             <div class="flex items-center justify-center py-8 text-neutral-500 gap-2 font-medium">
               <svg class="animate-spin h-5 w-5 text-vert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
@@ -497,7 +805,7 @@ const CATEGORY_ACCENTS: Record<string, string> = {
           `;
         }
         ensureSearchIndex().then(() => {
-          performSearchV3(query);
+          performSearchV3General(query, suggestionsContainer, resultsType);
         });
         return;
       }
@@ -509,8 +817,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
       const total = products.length + rayons.length + recipes.length;
 
       if (total === 0) {
-        if (searchSuggestions) {
-          searchSuggestions.innerHTML = `
+        if (suggestionsContainer) {
+          suggestionsContainer.innerHTML = `
             <div class="text-center py-8 text-neutral-500 text-[14px]">
               Aucun résultat pour <strong class="text-neutral-700">"${query}"</strong>.
             </div>
@@ -519,7 +827,7 @@ const CATEGORY_ACCENTS: Record<string, string> = {
         return;
       }
 
-      let html = `<div class="space-y-4">`;
+      let html = `<div class="space-y-4 text-left">`;
 
       if (rayons.length > 0) {
         html += `
@@ -582,27 +890,63 @@ const CATEGORY_ACCENTS: Record<string, string> = {
       }
 
       html += `</div>`;
-      if (searchSuggestions) searchSuggestions.innerHTML = html;
+      if (suggestionsContainer) suggestionsContainer.innerHTML = html;
     };
 
-    if (searchInput) {
-      searchInput.onfocus = () => {
+    // Binding Desktop Search
+    if (desktopSearch) {
+      desktopSearch.onfocus = () => {
         ensureSearchIndex();
-        if (searchInput.value.trim().length > 0) showSuggestions();
+        if (desktopSearch.value.trim().length > 0) {
+          performSearchV3General(desktopSearch.value, desktopSuggestions, "desktop");
+        }
       };
-      searchInput.onmouseenter = ensureSearchIndex;
-      searchInput.oninput = (e) => {
+      desktopSearch.onmouseenter = ensureSearchIndex;
+      desktopSearch.oninput = (e) => {
         const query = (e.target as HTMLInputElement).value;
-        performSearchV3(query);
+        performSearchV3General(query, desktopSuggestions, "desktop");
+      };
+    }
+
+    // Binding Mobile Search
+    if (mobileSearch) {
+      mobileSearch.onfocus = () => {
+        ensureSearchIndex();
+        if (mobileSearch.value.trim().length > 0) {
+          performSearchV3General(mobileSearch.value, mobileSuggestions, "mobile");
+        }
+      };
+      mobileSearch.onmouseenter = ensureSearchIndex;
+      mobileSearch.oninput = (e) => {
+        const query = (e.target as HTMLInputElement).value;
+        performSearchV3General(query, mobileSuggestions, "mobile");
+      };
+    }
+
+    // Binding Drawer Search
+    if (drawerSearch) {
+      drawerSearch.onfocus = ensureSearchIndex;
+      drawerSearch.onmouseenter = ensureSearchIndex;
+      drawerSearch.oninput = (e) => {
+        const query = (e.target as HTMLInputElement).value;
+        performSearchV3General(query, drawerSearchResults, "drawer");
       };
     }
 
     // Click outside search suggestions container
     document.addEventListener("click", (e) => {
-      const container = document.getElementById("desktop-search-container-v3");
+      const desktopContainer = document.getElementById("desktop-search-container-v3");
+      const mobileContainer = document.getElementById("mobile-search-row-v3");
       const target = e.target as HTMLElement;
-      if (container && !container.contains(target)) {
-        hideSuggestions();
+      
+      if (desktopContainer && !desktopContainer.contains(target)) {
+        desktopSuggestions?.classList.add("opacity-0", "scale-95", "pointer-events-none");
+        desktopSuggestions?.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
+      }
+      
+      if (mobileContainer && !mobileContainer.contains(target)) {
+        mobileSuggestions?.classList.add("opacity-0", "pointer-events-none", "hidden");
+        mobileSuggestions?.classList.remove("opacity-100", "pointer-events-auto", "block");
       }
     });
   };

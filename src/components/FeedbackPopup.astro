@@ -175,6 +175,20 @@ const googleReviewsUrl = "https://www.google.com/search?sca_esv=987102333fe88aad
       const shell = document.getElementById("feedback-popup");
       if (!shell) return;
 
+      // Auto-scroll and focus suggestions section if page loaded with #suggestions hash
+      if (window.location.hash.includes("suggestions")) {
+        const suggestionsSec = document.getElementById("suggestions");
+        if (suggestionsSec) {
+          setTimeout(() => {
+            suggestionsSec.scrollIntoView({ behavior: "smooth" });
+            const txt = document.getElementById("suggestion-message");
+            if (txt) {
+              setTimeout(() => txt.focus(), 900);
+            }
+          }, 500);
+        }
+      }
+
       // Check if already dismissed for 30 days
       if (Date.now() < getDismissedUntil()) {
         return;
@@ -199,15 +213,18 @@ const googleReviewsUrl = "https://www.google.com/search?sca_esv=987102333fe88aad
         setDismissed(30);
         dismissPopup(shell);
 
-        // Smooth scroll to suggestions section
-        const suggestionsSec = document.getElementById("suggestions");
-        if (suggestionsSec) {
-          suggestionsSec.scrollIntoView({ behavior: "smooth" });
-          // Focus the input
-          const txt = document.getElementById("suggestion-message");
-          if (txt) {
-            setTimeout(() => txt.focus(), 800);
+        const isHome = window.location.pathname === "/" || window.location.pathname.endsWith("/index.html") || window.location.pathname === "";
+        if (isHome) {
+          const suggestionsSec = document.getElementById("suggestions");
+          if (suggestionsSec) {
+            suggestionsSec.scrollIntoView({ behavior: "smooth" });
+            const txt = document.getElementById("suggestion-message");
+            if (txt) {
+              setTimeout(() => txt.focus(), 800);
+            }
           }
+        } else {
+          window.location.href = "/#suggestions";
         }
       });
 

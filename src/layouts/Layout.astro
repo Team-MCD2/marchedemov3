@@ -13,6 +13,7 @@ import HeaderV3 from "@components/HeaderV3.astro";
 import FooterV3 from "@components/FooterV3.astro";
 import TickerBanner from "@components/TickerBanner.astro";
 import ChatMo from "@components/ChatMo.astro";
+import FeedbackPopup from "@components/FeedbackPopup.astro";
 import { SITE } from "@/lib/site";
 import { faqSchema } from "@/lib/schema";
 import type { FAQItem } from "@/lib/faqs";
@@ -234,6 +235,8 @@ const schemas = Array.isArray(schema) ? schema : schema ? [schema] : [];
         email={SITE.email}
       />
     )}
+
+    {!hideChrome && <FeedbackPopup />}
 
     <script is:inline>
       /*

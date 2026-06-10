@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://marchedemov2.vercel.app/sitemap-index.xml

@@ -1,0 +1,10 @@
+const id = "promo-003";
+const collection = "promos";
+const data = {id:"promo-003",titre:"Ras el hanout artisanal — 250 g",description:"Mélange signature de 23 épices, torréfaction Maghreb.",image:"/images/promos/ras-el-hanout.jpg",prix_original:"7.50",prix_promo:"4.99",reduction_pct:33,rayon:"epices-du-monde",magasin:"toulouse-sud",date_debut:"2026-05-01",date_fin:"2026-06-30",mise_en_avant:false,actif:true};
+const _internal = {
+	type: 'data',
+	filePath: "C:/Users/Mommy Jayce/Desktop/Microdidact/MarchedemoV3/app/src/content/promos/promo-003.json",
+	rawData: "",
+};
+
+export { _internal, collection, data, id };

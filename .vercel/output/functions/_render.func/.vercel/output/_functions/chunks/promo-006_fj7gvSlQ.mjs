@@ -1,0 +1,10 @@
+const id = "promo-006";
+const collection = "promos";
+const data = {id:"promo-006",titre:"Huile d'olive extra vierge — 1 L",description:"Pression à froid Kabylie, bouteille 1 L.",image:"/images/promos/huile-olive.jpg",prix_original:"14.90",prix_promo:"10.90",reduction_pct:27,rayon:"saveur-mediterranee",magasin:"toulouse-sud",date_debut:"2026-04-18",date_fin:"2026-05-02",mise_en_avant:false,actif:true};
+const _internal = {
+	type: 'data',
+	filePath: "C:/Users/Mommy Jayce/Desktop/Microdidact/MarchedemoV3/app/src/content/promos/promo-006.json",
+	rawData: "",
+};
+
+export { _internal, collection, data, id };

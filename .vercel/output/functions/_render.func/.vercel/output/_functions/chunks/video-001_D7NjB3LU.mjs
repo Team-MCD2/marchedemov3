@@ -1,0 +1,10 @@
+const id = "video-001";
+const collection = "videos";
+const data = {id:"video-001",url_tiktok:"https://www.tiktok.com/@marchedemo/video/7484381785808178454",src_local:"/videos/tt-7484381785808178454.mp4",titre:"🚨 DÉBUT DE LA PROMO DÈS SAMEDI 22 MARS ! 🚨 Ne manquez pas nos offres ...",rayon:"home",ordre:1,actif:true};
+const _internal = {
+	type: 'data',
+	filePath: "C:/Users/Mommy Jayce/Desktop/Microdidact/MarchedemoV3/app/src/content/videos/video-001.json",
+	rawData: "",
+};
+
+export { _internal, collection, data, id };

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="30px" height="28px" viewBox="0 0 30 28" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 59.1 (86144) - https://sketch.com -->
+    <title>ICN / Close</title>
+    <desc>Created with Sketch.</desc>
+    <g id="FP-FULL" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Fiche-produit-zoom-2" transform="translate(-925.000000, -30.000000)">
+            <g id="ICN-/-BLEU-/-Close" transform="translate(925.000000, 30.000000)">
+                <ellipse id="Oval" fill="#E7E7E7" cx="15" cy="14" rx="15" ry="14"></ellipse>
+                <g id="Group-2" stroke-width="1" transform="translate(10.000000, 9.333333)" stroke="#0066CC" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9.52380952,0 L0,8.88888889 L9.52380952,0 Z" id="Line-3" stroke-width="2"></path>
+                    <path d="M0,0 L9.52380952,8.88888889 L0,0 Z" id="Line-3" stroke-width="2"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
