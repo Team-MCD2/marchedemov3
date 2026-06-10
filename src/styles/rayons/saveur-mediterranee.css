@@ -1,0 +1,69 @@
+/* DA méditerranéenne — Saveur Méditerranéenne
+   Lumière du sud, marché provençal premium. Faïence Zellige.
+   Premium dark night-cobalt theme with Majolica SVG motifs. */
+
+[data-rayon="saveur-mediterranee"] {
+  --rayon-accent:       #3A7DCA;   /* bleu cobalt */
+  --rayon-accent-dark:  #1C3F6E;
+  --rayon-accent-2:     #D35400;   /* terracotta */
+  --rayon-accent-3:     #5B8C33;   /* olive */
+  --rayon-fond-section: #F4F7FA;   /* bleu très clair */
+  --rayon-fond-hero:    #061124;   /* cobalt nuit */
+  --rayon-texte-hero:   #F0F4F8;
+  --rayon-font-deco:    var(--font-display);
+}
+
+[data-rayon="saveur-mediterranee"] .rayon-hero {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(211, 84, 0, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(91, 140, 51, 0.15) 0%, transparent 40%),
+    linear-gradient(135deg, #061124 0%, #0C2340 100%);
+  color: var(--rayon-texte-hero);
+}
+
+/* Motif Majolica / Zellige — losanges bleus, olive et terracotta */
+[data-rayon="saveur-mediterranee"] .rayon-motif {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%233A7DCA' stroke-width='1' stroke-opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='6' fill='none' stroke='%23D35400' stroke-width='1.2' stroke-opacity='0.15'/%3E%3Cpath d='M0 0 L15 15 M60 0 L45 15 M0 60 L15 45 M60 60 L45 45' stroke='%235B8C33' stroke-width='1' stroke-opacity='0.15'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+/* Bordure supérieure terracotta et olive */
+[data-rayon="saveur-mediterranee"] .rayon-hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(90deg,
+    var(--rayon-accent) 0 32px,
+    var(--rayon-accent-2) 32px 40px,
+    var(--rayon-accent-3) 40px 48px,
+    var(--rayon-accent) 48px 80px);
+  opacity: 0.85;
+}
+
+[data-rayon="saveur-mediterranee"] .rayon-badge {
+  background: var(--rayon-accent);
+  color: #FFFFFF;
+}
+
+[data-rayon="saveur-mediterranee"] .rayon-pill {
+  background: rgba(240, 244, 252, 0.08);
+  color: var(--rayon-texte-hero);
+  border: 1px solid rgba(240, 244, 252, 0.18);
+}
+
+/* Typography: reduce title size to prevent 'Méditerranéenne' wrapping.
+   Soft hyphens (\00AD) are injected in the HTML via site.ts rayon.nom.
+   CSS hyphens: auto provides a fallback for any browser that supports it. */
+[data-rayon="saveur-mediterranee"] .rayon-title.display-xl {
+  font-size: clamp(2rem, 6.2vw, 5.8rem);
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+@media (max-width: 767px) {
+  [data-rayon="saveur-mediterranee"] .rayon-title.display-xl {
+    font-size: clamp(1.9rem, 8vw, 2.8rem);
+  }
+}

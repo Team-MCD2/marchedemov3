@@ -1,0 +1,828 @@
+---
+/**
+ * Layout.astro — wrap every page.
+ * Injects: Google Fonts (Roboto) + Typekit (Filson Pro/Soft), full SEO head, sticky Header, full Footer.
+ * Each page passes its own title/description/og/faq/schema via Astro.props.
+ */
+import "@styles/global.css";
+import "@styles/rayons/cultural-palettes.css";
+import { ViewTransitions } from "astro:transitions";
+import HeaderV2 from "@components/HeaderV2.astro";
+import FooterV2 from "@components/FooterV2.astro";
+import HeaderV3 from "@components/HeaderV3.astro";
+import FooterV3 from "@components/FooterV3.astro";
+import TickerBanner from "@components/TickerBanner.astro";
+import ChatMo from "@components/ChatMo.astro";
+import { SITE } from "@/lib/site";
+import { faqSchema } from "@/lib/schema";
+import type { FAQItem } from "@/lib/faqs";
+import { DEFAULT_STORE } from "@/lib/geo";
+import { configV3 } from "@/lib/config-v3";
+
+const currentStore = DEFAULT_STORE;
+
+interface Props {
+  /** Page title (used as <title> and og:title). */
+  title: string;
+  /** Meta description + og:description. 150–160 chars max. */
+  description: string;
+  /** Canonical URL. If omitted, we'll derive it. */
+  canonical?: string;
+  /** Image for social sharing (path from root or absolute). */
+  ogImage?: string;
+  /** Hero image to preload for LCP (absolute path starting with /). */
+  heroImage?: string;
+  /** Type hint for hero image preload (e.g. "image/webp", "image/jpeg"). */
+  heroImageType?: string;
+  /** Accordion FAQ items. If provided, injects FAQPage JSON-LD automatically. */
+  faqItems?: FAQItem[];
+  /** Extra schema.org objects (Organization, GroceryStore, Offer, etc.). */
+  schema?: object | object[];
+  /** Lock body scroll (e.g. for /admin login screens). */
+  noIndex?: boolean;
+  /** Extra body classes (rayons culturels : `data-rayon` + bg). */
+  bodyClass?: string;
+  bodyDataRayon?: string;
+  /** Hide header/footer (for minimal admin screens). */
+  hideChrome?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  ogImage,
+  heroImage,
+  heroImageType,
+  faqItems,
+  schema,
+  noIndex,
+  bodyClass = "",
+  bodyDataRayon,
+  hideChrome,
+} = Astro.props as Props;
+
+function inferImageType(path?: string): string | undefined {
+  if (!path) return undefined;
+  const ext = path.split("?")[0].split(".").pop()?.toLowerCase();
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  if (ext === "avif") return "image/avif";
+  return undefined;
+}
+const heroType = heroImageType ?? inferImageType(heroImage);
+
+function supabaseStorageOrigin(): string | null {
+  try {
+    const raw = import.meta.env.SUPABASE_URL;
+    if (!raw || typeof raw !== "string") return null;
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+const supabaseOrigin = supabaseStorageOrigin();
+
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, SITE.url).toString();
+
+const resolvedOgImage =
+  ogImage ??
+  (Astro.url.pathname === "/" || Astro.url.pathname === ""
+    ? "/logos/logo-marchedemo-rond-contourgreen.png"
+    : (heroImage ?? "/logos/logo-marchedemo-rond-contourgreen.png"));
+const absoluteOgImage = resolvedOgImage.startsWith("http")
+  ? resolvedOgImage
+  : `${SITE.url}${resolvedOgImage}`;
+const schemas = Array.isArray(schema) ? schema : schema ? [schema] : [];
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/png" href="/logos/logo-marchedemo.png" />
+    <link rel="apple-touch-icon" href="/logos/logo-marchedemo.png" />
+    <meta name="theme-color" content="#1C6B35" />
+
+    <!-- Google Fonts Roboto Preloads (Hosted Locally under public/assets/fonts/roboto/) -->
+    <link rel="preload" as="font" crossorigin="" href="/assets/fonts/roboto/roboto-v27-latin-ext_latin-regular.woff2" type="font/woff2"/>
+    <link rel="preload" as="font" crossorigin="" href="/assets/fonts/roboto/roboto-v27-latin-ext_latin-500.woff2" type="font/woff2"/>
+
+    <!-- Typekit : Filson Pro + Filson Soft -->
+    <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+    <link rel="preconnect" href="https://p.typekit.net" crossorigin />
+    <link rel="stylesheet" href="https://use.typekit.net/tci0qgy.css" />
+
+    {supabaseOrigin && (
+      <>
+        <link rel="preconnect" href={supabaseOrigin} crossorigin />
+        <link rel="dns-prefetch" href={supabaseOrigin} />
+      </>
+    )}
+
+    {!hideChrome && (
+      <link
+        rel="preload"
+        as="image"
+        href="/logos/logo-marchedemo-rec-contourwh.png"
+        type="image/png"
+        fetchpriority="high"
+      />
+    )}
+
+    {heroImage && (
+      <link
+        rel="preload"
+        as="image"
+        href={heroImage}
+        type={heroType}
+        fetchpriority="high"
+      />
+    )}
+
+    <!-- SEO -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="author" content={SITE.name} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={absoluteOgImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content="fr_FR" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image:alt" content={description} />
+    <meta name="twitter:image" content={absoluteOgImage} />
+
+    <!-- JSON-LD : FAQ -->
+    {faqItems && faqItems.length > 0 && (
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(faqSchema(faqItems))}
+      />
+    )}
+
+    <!-- JSON-LD : other schemas -->
+    {schemas.map((s) => (
+      <script type="application/ld+json" set:html={JSON.stringify(s)} />
+    ))}
+
+    <ViewTransitions />
+  </head>
+
+  <body
+    class={`min-h-screen flex flex-col bg-white text-[color:var(--color-texte)] font-pro antialiased ${bodyClass}`}
+    data-rayon={bodyDataRayon}
+  >
+
+    <!-- Page loader interstitial -->
+    <div
+      id="pageloader"
+      class="pageloader-shell"
+      aria-hidden="true"
+      transition:persist="pageloader"
+    >
+      <div class="pageloader-bar" id="pageloader-bar"></div>
+      <div class="pageloader-card" role="status" aria-live="polite">
+        <img
+          src="/logos/logo-marchedemo-rond-contourgreen.png"
+          alt=""
+          width="72"
+          height="72"
+          class="pageloader-logo"
+        />
+        <span class="pageloader-label">Chargement…</span>
+      </div>
+    </div>
+
+    {!hideChrome && (
+      <>
+        {configV3.isV3Active ? <HeaderV3 /> : <HeaderV2 />}
+      </>
+    )}
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    {!hideChrome && (
+      <>
+        {configV3.isV3Active ? <FooterV3 /> : <FooterV2 />}
+      </>
+    )}
+
+    {!hideChrome && (
+      <ChatMo
+        phoneE164={currentStore.telE164 || SITE.phoneE164}
+        phoneDisplay={currentStore.telephone || SITE.phone}
+        email={SITE.email}
+      />
+    )}
+
+    <script is:inline>
+      /*
+        Smooth scroll reveal and interactive effects (Parallax, Tilt, Split-Reveal, Magnetic buttons).
+      */
+      (function () {
+        const prefersReduced =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        /* Scroll-reveal observer logic */
+        const applyStagger = (parent) => {
+          try {
+            const step = Number(parent.dataset.revealStep || 80);
+            const cap  = Number(parent.dataset.revealCap  || 600);
+            const kids = parent.querySelectorAll(":scope > .reveal, :scope > * > .reveal");
+            kids.forEach((kid, i) => {
+              if (kid.dataset.revealDelay) return;
+              const d = Math.min(i * step, cap);
+              kid.style.setProperty("--reveal-delay", d + "ms");
+            });
+          } catch (e) {
+            console.error("Error applying stagger:", e);
+          }
+        };
+
+        const mountReveal = () => {
+          try {
+            document.querySelectorAll("[data-reveal-stagger]").forEach(applyStagger);
+          } catch (e) {
+            console.error("Error query-selecting stagger:", e);
+          }
+
+          try {
+            document
+              .querySelectorAll(".reveal[data-reveal-delay]:not(.is-visible)")
+              .forEach((el) => {
+                el.style.setProperty("--reveal-delay", el.dataset.revealDelay + "ms");
+              });
+          } catch (e) {
+            console.error("Error setting custom delay:", e);
+          }
+
+          if (prefersReduced) {
+            document
+              .querySelectorAll(".reveal:not(.is-visible)")
+              .forEach((el) => el.classList.add("is-visible"));
+            return;
+          }
+
+          const els = document.querySelectorAll(".reveal:not(.is-visible)");
+          if (!els.length || !("IntersectionObserver" in window)) {
+            els.forEach((el) => el.classList.add("is-visible"));
+            return;
+          }
+          
+          try {
+            const io = new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    io.unobserve(entry.target);
+                  }
+                });
+              },
+              { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }
+            );
+            els.forEach((el) => io.observe(el));
+          } catch (e) {
+            console.error("Observer initialization error:", e);
+            els.forEach((el) => el.classList.add("is-visible"));
+          }
+
+          setTimeout(() => {
+            document.querySelectorAll(".reveal:not(.is-visible)").forEach((el) => {
+              el.classList.add("is-visible");
+            });
+          }, 1500);
+        };
+
+        /* Parallax scroll handling */
+        let parallaxElements = [];
+        const collectParallax = () => {
+          parallaxElements = Array.from(
+            document.querySelectorAll("[data-parallax]")
+          ).map((el) => ({
+            el,
+            factor: parseFloat(el.getAttribute("data-parallax") || "0.2"),
+          }));
+        };
+
+        /* Vanilla Tilt (card lifting & glares) */
+        const mountTilt = () => {
+          const cards = document.querySelectorAll("[data-tilt]");
+          cards.forEach((el) => {
+            const max = parseFloat(el.getAttribute("data-tilt-max") || "4");
+            const onMove = (e) => {
+              const rect = el.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              const px = x / rect.width;
+              const py = y / rect.height;
+              const rx = (py - 0.5) * -max;
+              const ry = (px - 0.5) * max;
+              el.style.setProperty("--rx", `${rx}deg`);
+              el.style.setProperty("--ry", `${ry}deg`);
+            };
+            const onLeave = () => {
+              el.style.setProperty("--rx", "0deg");
+              el.style.setProperty("--ry", "0deg");
+            };
+            el.addEventListener("mousemove", onMove, { passive: true });
+            el.addEventListener("mouseleave", onLeave);
+          });
+        };
+
+        /* Text Split Reveal */
+        const mountSplitReveal = () => {
+          const targets = document.querySelectorAll("[data-split-reveal]");
+          targets.forEach((el) => {
+            if (el.dataset.splitDone) return;
+            el.dataset.splitDone = "1";
+            const html = el.innerHTML;
+            el.innerHTML = html
+              .split("<br>")
+              .map((line) => {
+                return `<span class="reveal-line block overflow-hidden"><span class="reveal-inner inline-block transition-transform duration-[0.75s] ease-out translate-y-full">${line}</span></span>`;
+              })
+              .join("<br>");
+          });
+        };
+
+        const onScrollFrame = () => {
+          if (prefersReduced) {
+            document.querySelectorAll(".reveal, .reveal-left, .reveal-right, .reveal-scale, .reveal-blur, .reveal-inner").forEach((el) => {
+              el.classList.add("is-visible");
+            });
+            return;
+          }
+          const viewHeight = window.innerHeight;
+          parallaxElements.forEach(({ el, factor }) => {
+            const rect = el.getBoundingClientRect();
+            if (rect.bottom < 0 || rect.top > viewHeight) return;
+            const offset = (rect.top - viewHeight / 2) * factor;
+            el.style.transform = `translateY(${offset}px)`;
+          });
+        };
+
+        /* Magnetic button hover effect */
+        const mountMagnetic = () => {
+          const items = document.querySelectorAll(".btn-magnetic");
+          items.forEach((el) => {
+            const onMove = (e) => {
+              const rect = el.getBoundingClientRect();
+              const x = e.clientX - rect.left - rect.width / 2;
+              const y = e.clientY - rect.top - rect.height / 2;
+              el.style.setProperty("--mag-x", `${x * 0.35}px`);
+              el.style.setProperty("--mag-y", `${y * 0.35}px`);
+            };
+            const onLeave = () => {
+              el.style.setProperty("--mag-x", "0px");
+              el.style.setProperty("--mag-y", "0px");
+            };
+            window.addEventListener("mousemove", onMove, { passive: true });
+            el.addEventListener("mouseleave", onLeave);
+          });
+        };
+
+        const mount = () => {
+          mountReveal();
+          collectParallax();
+          mountTilt();
+          mountSplitReveal();
+          mountMagnetic();
+          onScrollFrame();
+        };
+
+        window.addEventListener("scroll", onScrollFrame, { passive: true });
+        window.addEventListener("resize", onScrollFrame, { passive: true });
+        document.addEventListener("astro:page-load", mount);
+
+        if (document.readyState !== "loading") mount();
+        else document.addEventListener("DOMContentLoaded", mount);
+      })();
+    </script>
+
+    <style is:global>
+      .pageloader-shell {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        pointer-events: none;
+        visibility: hidden;
+      }
+      .pageloader-shell.is-active { visibility: visible; }
+
+      .pageloader-bar {
+        position: absolute;
+        top: 0; left: 0;
+        height: 2px;
+        width: 0;
+        background: linear-gradient(
+          90deg,
+          var(--color-vert, #1C6B35) 0%,
+          var(--color-vert, #1C6B35) 55%,
+          #4CAF66 100%
+        );
+        box-shadow: 0 0 10px rgba(28, 107, 53, 0.55);
+        opacity: 0;
+        transition:
+          width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.2s ease;
+      }
+      .pageloader-shell.is-active .pageloader-bar { opacity: 1; }
+
+      .pageloader-card {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) scale(0.92);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 26px 40px 20px;
+        background: color-mix(in srgb, var(--color-blanc, #FFFFFF) 95%, transparent);
+        backdrop-filter: blur(10px) saturate(1.05);
+        -webkit-backdrop-filter: blur(10px) saturate(1.05);
+        border-radius: 24px;
+        box-shadow:
+          0 10px 40px rgba(28, 107, 53, 0.14),
+          0 2px 6px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(28, 107, 53, 0.08);
+        opacity: 0;
+        transition:
+          opacity 0.25s ease,
+          transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .pageloader-shell.is-slow .pageloader-card {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      .pageloader-shell.is-slow {
+        background: color-mix(in srgb, var(--color-blanc, #FFFFFF) 55%, transparent);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        transition: backdrop-filter 0.25s ease;
+      }
+
+      .pageloader-logo {
+        width: 68px;
+        height: 68px;
+        display: block;
+        animation: pageloader-breathe 1.6s ease-in-out infinite;
+        will-change: transform, opacity;
+      }
+      @keyframes pageloader-breathe {
+        0%, 100% { transform: scale(1);     opacity: 0.88; }
+        50%      { transform: scale(1.08);  opacity: 1;    }
+      }
+      .pageloader-label {
+        font-family: var(--font-body, system-ui);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--color-vert-dark, #0f4c21);
+        opacity: 0.82;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pageloader-logo { animation: none; }
+        .pageloader-bar { transition: opacity 0.2s ease; }
+        .pageloader-card {
+          transform: translate(-50%, -50%);
+          transition: opacity 0.2s ease;
+        }
+        .pageloader-shell.is-slow .pageloader-card {
+          transform: translate(-50%, -50%);
+        }
+      }
+
+      /* --- Premium Toast System --- */
+      .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+        max-width: 380px;
+        width: calc(100% - 48px);
+      }
+      .toast-notification {
+        pointer-events: auto;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(15, 15, 15, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: var(--color-blanc, #FFFFFF);
+        box-shadow: 
+          0 10px 30px rgba(0, 0, 0, 0.25), 
+          0 1px 3px rgba(0, 0, 0, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transform: translateY(16px) scale(0.95);
+        opacity: 0;
+        transition: 
+          transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.3s ease;
+        will-change: transform, opacity;
+      }
+      .toast-notification.is-visible {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      .toast-icon {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+      }
+      .toast-icon.success {
+        color: var(--color-vert-light, #2E8B4A);
+      }
+      .toast-icon.error {
+        color: var(--color-rouge-light, #B02525);
+      }
+      .toast-content {
+        font-family: var(--font-pro), sans-serif;
+        font-size: 14.5px;
+        font-weight: 500;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.9);
+      }
+    </style>
+
+    <script is:inline>
+      /*
+        Drive the page loader from Astro's View Transitions lifecycle.
+      */
+      (() => {
+        if (document.__pageLoaderMounted) return;
+        document.__pageLoaderMounted = true;
+
+        const shell = document.getElementById("pageloader");
+        const bar = document.getElementById("pageloader-bar");
+        if (!shell || !bar) return;
+
+        const SHOW_BAR_AFTER_MS  = 80;
+        const SHOW_CARD_AFTER_MS = 380;
+
+        let active = false;
+        let barTimer = 0;
+        let cardTimer = 0;
+        let barStartTimer = 0;
+
+        const runBarSteps = () => {
+          const steps = [22, 58, 82];
+          let i = 0;
+          clearInterval(barTimer);
+          bar.style.width = "0%";
+          barTimer = setInterval(() => {
+            if (!active || i >= steps.length) {
+              clearInterval(barTimer);
+              return;
+            }
+            bar.style.width = steps[i] + "%";
+            i++;
+          }, 160);
+        };
+
+        const startLoading = () => {
+          active = true;
+          shell.classList.remove("is-slow");
+          clearTimeout(cardTimer);
+          clearTimeout(barStartTimer);
+
+          barStartTimer = setTimeout(() => {
+            if (!active) return;
+            shell.classList.add("is-active");
+            runBarSteps();
+          }, SHOW_BAR_AFTER_MS);
+
+          cardTimer = setTimeout(() => {
+            if (active) shell.classList.add("is-slow");
+          }, SHOW_CARD_AFTER_MS);
+        };
+
+        const finishLoading = () => {
+          active = false;
+          clearTimeout(cardTimer);
+          clearTimeout(barStartTimer);
+          clearInterval(barTimer);
+
+          const wasActive = shell.classList.contains("is-active");
+          if (!wasActive) {
+            shell.classList.remove("is-slow");
+            return;
+          }
+          bar.style.width = "100%";
+          window.setTimeout(() => {
+            shell.classList.remove("is-slow");
+            shell.classList.remove("is-active");
+            window.setTimeout(() => { bar.style.width = "0%"; }, 250);
+          }, 140);
+        };
+
+        document.addEventListener("astro:before-preparation", startLoading);
+        document.addEventListener("astro:after-swap", finishLoading);
+
+        document.addEventListener("astro:page-load", () => {
+          if (active) finishLoading();
+        });
+        window.addEventListener("pageshow", (e) => {
+          if (e.persisted) finishLoading();
+        });
+      })();
+    </script>
+
+    <script is:inline>
+      /*
+        Deferred image loader.
+      */
+      (() => {
+        const SRC_ATTR = "data-defer-src";
+        const DONE_ATTR = "data-defer-done";
+
+        const promote = (img) => {
+          if (img.getAttribute(DONE_ATTR)) return;
+          const target = img.getAttribute(SRC_ATTR);
+          if (!target) return;
+          const run = () => {
+            img.src = target;
+            img.setAttribute(DONE_ATTR, "1");
+            img.removeAttribute(SRC_ATTR);
+          };
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(run, { timeout: 2000 });
+          } else {
+            setTimeout(run, 100);
+          }
+        };
+
+        const mount = () => {
+          const imgs = document.querySelectorAll("img[" + SRC_ATTR + "]");
+          if (!imgs.length) return;
+          if (!("IntersectionObserver" in window)) {
+            imgs.forEach(promote);
+            return;
+          }
+          const io = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((e) => {
+                if (!e.isIntersecting) return;
+                promote(e.target);
+                io.unobserve(e.target);
+              });
+            },
+            { rootMargin: "200px 0px", threshold: 0.01 }
+          );
+          imgs.forEach((img) => io.observe(img));
+        };
+
+        document.addEventListener("astro:page-load", mount);
+        if (document.readyState !== "loading") mount();
+        else document.addEventListener("DOMContentLoaded", mount);
+      })();
+    </script>
+
+    <script is:inline>
+      (() => {
+        window.showToast = (message, type = "success") => {
+          let container = document.getElementById("toast-container");
+          if (!container) {
+            container = document.createElement("div");
+            container.id = "toast-container";
+            container.className = "toast-container";
+            document.body.appendChild(container);
+          }
+
+          const toast = document.createElement("div");
+          toast.className = "toast-notification";
+
+          const isSuccess = type === "success";
+          const iconColor = isSuccess ? "success" : "error";
+          const iconSvg = isSuccess
+            ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+            : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+          toast.innerHTML = `
+            <div class="toast-icon ${iconColor}">${iconSvg}</div>
+            <div class="toast-content">${message}</div>
+          `;
+
+          container.appendChild(toast);
+
+          toast.offsetHeight;
+          toast.classList.add("is-visible");
+
+          setTimeout(() => {
+            toast.classList.remove("is-visible");
+            toast.style.transform = "translateY(-12px) scale(0.95)";
+            setTimeout(() => {
+              toast.remove();
+            }, 400);
+          }, 4500);
+        };
+
+        const checkUrlParams = () => {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has("newsletter")) {
+            const status = params.get("newsletter");
+            const msg = params.get("msg");
+            if (status === "ok") {
+              window.showToast("Merci pour votre abonnement ! -20% sur votre prochain caddie.", "success");
+            } else if (status === "error") {
+              const text = msg === "429" 
+                ? "Trop de tentatives. Veuillez réessayer plus tard." 
+                : "Une erreur est survenue lors de l'abonnement.";
+              window.showToast(text, "error");
+            }
+            params.delete("newsletter");
+            params.delete("msg");
+            const newSearch = params.toString();
+            const newUrl = window.location.pathname + (newSearch ? "?" + newSearch : "") + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+          }
+
+          if (params.has("contact")) {
+            const status = params.get("contact");
+            const msg = params.get("msg");
+            if (status === "ok") {
+              window.showToast("Message envoyé ! Notre service client vous répondra sous 48h.", "success");
+            } else if (status === "error") {
+              const text = msg === "429" 
+                ? "Trop de tentatives. Veuillez réessayer plus tard." 
+                : "Tous les champs obligatoires doivent être remplis.";
+              window.showToast(text, "error");
+            }
+            params.delete("contact");
+            params.delete("msg");
+            const newSearch = params.toString();
+            const newUrl = window.location.pathname + (newSearch ? "?" + newSearch : "") + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+          }
+        };
+
+        document.addEventListener("astro:page-load", checkUrlParams);
+        if (document.readyState !== "loading") checkUrlParams();
+        else document.addEventListener("DOMContentLoaded", checkUrlParams);
+      })();
+    </script>
+
+    <script is:inline>
+      (() => {
+        document.addEventListener("click", (e) => {
+          if (e.detail === 3) {
+            const input = e.target;
+            if (input && (input.tagName === "INPUT" || input.tagName === "TEXTAREA")) {
+              const placeholder = input.getAttribute("placeholder");
+              if (placeholder) {
+                const proto = input.tagName === "INPUT" 
+                  ? window.HTMLInputElement.prototype 
+                  : window.HTMLTextAreaElement.prototype;
+                const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
+                if (descriptor && descriptor.set) {
+                  descriptor.set.call(input, placeholder);
+                  input.dispatchEvent(new Event("input", { bubbles: true }));
+                  input.dispatchEvent(new Event("change", { bubbles: true }));
+                } else {
+                  input.value = placeholder;
+                  input.dispatchEvent(new Event("input", { bubbles: true }));
+                  input.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }
+            }
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

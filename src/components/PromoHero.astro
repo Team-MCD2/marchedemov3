@@ -1,0 +1,9 @@
+---
+import { configV3 } from "@/lib/config-v3";
+import PromoHeroV2 from "./PromoHeroV2.astro";
+import PromoHeroV3 from "./PromoHeroV3.astro";
+
+const props = Astro.props;
+---
+
+{configV3.isV3Active ? <PromoHeroV3 {...props} /> : <PromoHeroV2 {...props} />}

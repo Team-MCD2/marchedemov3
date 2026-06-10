@@ -1,0 +1,170 @@
+/**
+ * /api/admin/produits
+ *
+ * Admin CRUD for the public.produits table in Supabase (catalogue).
+ * Protected by the admin cookie. Writes use the service_role key.
+ *
+ *   GET   : list all produits (active + inactive)
+ *   POST  : create one
+ *   PUT   : bulk upsert (import), body = { produits: [...] }
+ *
+ * Schema notes :
+ *   - No magasin column (catalogue is shared across both stores).
+ *   - prix_indicatif is nullable : we don't always advertise a price,
+ *     and the public site never shows it unless explicitly requested
+ *     (no misleading "prix cassé" signal outside /promos).
+ */
+import type { APIRoute } from "astro";
+import { isAuthenticated } from "@/lib/auth";
+import { supabaseAdmin, type RayonSlug } from "@/lib/supabase";
+import { logActivity } from "@/lib/admin-activity";
+import { slugifyKey } from "@/lib/slug";
+
+export const prerender = false;
+
+const ALLOWED_RAYONS: readonly RayonSlug[] = [
+  "boucherie-halal",
+  "fruits-legumes",
+  "epices-du-monde",
+  "saveurs-afrique",
+  "saveurs-asie",
+  "saveur-mediterranee",
+  "saveur-sud-amer",
+  "balkans-turques",
+  "produits-courants",
+  "surgeles",
+  "boulangerie",
+  "produits-laitiers",
+];
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
+}
+
+async function requireAdmin(cookies: import("astro").AstroCookies): Promise<Response | null> {
+  if (!(await isAuthenticated(cookies))) return json({ error: "Unauthorized" }, 401);
+  if (!supabaseAdmin) return json({ error: "Supabase service_role key missing" }, 500);
+  return null;
+}
+
+function normalizeProduit(raw: any) {
+  const required = ["slug", "nom", "rayon"];
+  for (const f of required) {
+    if (raw[f] === undefined || raw[f] === null || raw[f] === "") {
+      throw new Error(`Champ obligatoire manquant : ${f}`);
+    }
+  }
+  const rayon = String(raw.rayon).trim();
+  if (!ALLOWED_RAYONS.includes(rayon as RayonSlug)) {
+    throw new Error(`Rayon invalide : ${rayon}`);
+  }
+  let prix_indicatif: number | null = null;
+  if (raw.prix_indicatif != null && raw.prix_indicatif !== "") {
+    const n = Number(raw.prix_indicatif);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error(`prix_indicatif doit être un nombre >= 0 ou vide`);
+    }
+    prix_indicatif = n;
+  }
+  /* Accented slugs from external sources (CSV pastes, legacy imports)
+   * are stripped of diacritics here so the DB never holds a slug the
+   * admin's client-side regex `[a-z0-9\-]+` can't match. Matches the
+   * `slugifyLocal()` in `ProduitsManager.jsx`. */
+  const slug = slugifyKey(raw.slug);
+  if (!slug) {
+    throw new Error("Slug invalide : doit contenir au moins un caractère alphanumérique");
+  }
+  return {
+    slug,
+    nom: String(raw.nom).trim(),
+    description: raw.description != null ? String(raw.description) : "",
+    image_url: raw.image_url || raw.image || null,
+    prix_indicatif,
+    unite: raw.unite ? String(raw.unite).trim() : null,
+    rayon,
+    /* Hiérarchie catégorielle pour drill-down. Optionnels — null si vide.
+       Les slugs sont validés par la SQL CHECK via taxonomie.ts si besoin,
+       mais on accepte ici n'importe quelle string non-vide pour rester
+       flexible sur les imports massifs.                                */
+    categorie: raw.categorie ? String(raw.categorie).trim() : null,
+    sous_categorie: raw.sous_categorie ? String(raw.sous_categorie).trim() : null,
+    origine: raw.origine ? String(raw.origine).trim() : null,
+    badge: raw.badge ? String(raw.badge).trim() : null,
+    actif: raw.actif !== false,
+    ordre: Number.isFinite(Number(raw.ordre)) ? Number(raw.ordre) : 0,
+  };
+}
+
+export const GET: APIRoute = async ({ cookies }) => {
+  const deny = await requireAdmin(cookies);
+  if (deny) return deny;
+
+  const { data, error } = await supabaseAdmin!
+    .from("produits")
+    .select("*")
+    .order("rayon", { ascending: true })
+    .order("ordre", { ascending: true })
+    .order("nom", { ascending: true });
+
+  if (error) return json({ error: error.message }, 500);
+  return json({ produits: data ?? [] });
+};
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const deny = await requireAdmin(cookies);
+  if (deny) return deny;
+
+  try {
+    const body = await request.json();
+    const row = normalizeProduit(body);
+    const { data, error } = await supabaseAdmin!
+      .from("produits")
+      .insert(row)
+      .select()
+      .single();
+    if (error) throw error;
+    logActivity({
+      entity: "produit",
+      entity_id: data?.id ?? null,
+      entity_label: data?.nom ?? row.slug,
+      action: "create",
+      payload: { rayon: data?.rayon, slug: data?.slug },
+    });
+    return json({ produit: data }, 201);
+  } catch (err: any) {
+    return json({ error: err.message || String(err) }, 400);
+  }
+};
+
+export const PUT: APIRoute = async ({ request, cookies }) => {
+  const deny = await requireAdmin(cookies);
+  if (deny) return deny;
+
+  try {
+    const body = await request.json();
+    if (!Array.isArray(body.produits)) {
+      return json({ error: "Format attendu : { produits: [...] }" }, 400);
+    }
+    const rows = body.produits.map(normalizeProduit);
+    const { data, error } = await supabaseAdmin!
+      .from("produits")
+      .upsert(rows, { onConflict: "slug" })
+      .select();
+    if (error) throw error;
+    logActivity({
+      entity: "produit",
+      action: "import",
+      entity_label: `${data?.length ?? 0} produit(s)`,
+      payload: {
+        count: data?.length ?? 0,
+        slugs: (data ?? []).slice(0, 50).map((r: any) => r.slug),
+      },
+    });
+    return json({ produits: data ?? [], count: data?.length ?? 0 });
+  } catch (err: any) {
+    return json({ error: err.message || String(err) }, 400);
+  }
+};

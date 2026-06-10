@@ -1,0 +1,89 @@
+{
+  "prospectus": {
+    "filters": {
+      "00": "Tous",
+      "01": "Hypermarchés",
+      "02": "E.Leclerc Express",
+      "03": "Auto",
+      "04": "Voyages",
+      "05": "Jouet",
+      "06": "Brico",
+      "07": "Jardi",
+      "08": "Optique",
+      "09": "Espace Culturel",
+      "010": "Le Manège à Bijoux",
+      "011": "Sport",
+      "012": "Parapharmacie",
+      "013": "Nos Animaux",
+      "014": "Une Heure pour Soi",
+      "015": "SAV"
+    },
+    "all": "Tous les prospectus",
+    "filter": "Filtrer",
+    "not-available": "Aucun prospectus n'est disponible pour le moment",
+    "filterBy": "Filtrer par",
+    "filterSelectPlaceholder": "Tous les catalogues",
+    "catalogues": "Nos catalogues",
+    "date": "Du {startDate} au {endDate}",
+    "digital-catalog": "Catalogue digital"
+  },
+  "delivery": {
+    "store": {
+      "or": "ou",
+      "pick-up": "Trouvez le magasin E.Leclerc le plus proche de chez vous proposant cette offre :",
+      "pick-up-mobile": "Retour",
+      "choose-store": "Choisir ce magasin",
+      "choose-a-store": "Choisir un magasin",
+      "choose": "Choisir",
+      "mobile": {
+        "list": "Liste",
+        "map": "Carte",
+        "cancel": "Annuler",
+        "choose": "Choisir"
+      },
+      "daysNames": {
+        "Monday": "Lundi",
+        "Tuesday": "Mardi",
+        "Wednesday": "Mercredi",
+        "Thursday": "Jeudi",
+        "Friday": "Vendredi",
+        "Saturday": "Samedi",
+        "Sunday": "Dimanche",
+        "closed": "Fermé"
+      },
+      "to": "{start} à {end}",
+      "and": "et de {start} à {end}",
+      "open-exceptionally": "Ouverture exceptionnelle le {date}",
+      "locate": "Me géolocaliser",
+      "placeholder": "Adresse, ville…",
+      "no-postal-code": "Il n'y a pas de magasin proposant cette offre à proximité de votre recherche, essayez avec une nouvelle ville...",
+      "no-result": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de votre choix.",
+      "no-result-promotion": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de chez vous proposant cette offre."
+    }
+  },
+  "shared": {
+    "woosmap": {
+      "store": {
+        "locate": "Me géolocaliser",
+        "no-result": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de votre choix.",
+        "no-result-promotion": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de chez vous proposant cette offre.",
+        "no-postal-code": "Aucun magasin disponible pour ce code postal",
+        "daysNames": {
+          "Monday": "Lundi",
+          "Tuesday": "Mardi",
+          "Wednesday": "Mercredi",
+          "Thursday": "Jeudi",
+          "Friday": "Vendredi",
+          "Saturday": "Samedi",
+          "Sunday": "Dimanche",
+          "closed": "Fermé"
+        },
+        "open-exceptionally": "Ouverture exceptionnelle le {date}",
+        "to": "{start} à {end}",
+        "and": "et de {start} à {end}",
+        "placeholder": "Adresse, ville…",
+        "loading-map": "Chargement de la carte en cours..."
+      }
+    }
+  }
+}

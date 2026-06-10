@@ -1,0 +1,148 @@
+---
+/**
+ * PromoCardV3 — E.Leclerc-style promotion card.
+ * - Circular discount sticker in Rouge MDM (#8B1919) at top-left.
+ * - Top brand label.
+ * - Pricing: Large euros promo price, small cents exponent, lined-through original price, unit price.
+ * - Right: Capsule Ajouter button in Brand Green or Rayon color.
+ */
+import { RAYONS } from "@/lib/site";
+import { supabaseSrcSet } from "@/lib/image-cdn";
+
+interface Props {
+  slug?: string;
+  titre: string;
+  description?: string;
+  image: string;
+  prix_original: string | number;
+  prix_promo: string | number;
+  reduction_pct: number;
+  rayon: string;
+  magasin: "tous" | "toulouse-sud";
+  date_fin: string;
+  featured?: boolean;
+}
+
+const {
+  slug,
+  titre,
+  description = "",
+  image,
+  prix_original,
+  prix_promo,
+  reduction_pct,
+  rayon,
+  magasin,
+  date_fin,
+  featured = false,
+} = Astro.props as Props;
+
+// 1. Format pricing
+const pPromo = typeof prix_promo === "number" ? prix_promo : parseFloat(prix_promo);
+const pOriginal = typeof prix_original === "number" ? prix_original : parseFloat(prix_original);
+
+const promoEuros = Math.floor(pPromo);
+const promoCentimes = Math.round((pPromo - promoEuros) * 100).toString().padStart(2, "0");
+
+const origEuros = Math.floor(pOriginal);
+const origCentimes = Math.round((pOriginal - origEuros) * 100).toString().padStart(2, "0");
+
+const rayonData = (RAYONS as any)[rayon];
+const rayonNom = rayonData?.nomCourt ?? rayon;
+const rayonSlug = rayonData?.slug ?? rayon;
+const accent = rayonData?.accent ?? "#1C6B35";
+
+const href = slug ? `/produits/${slug}` : `/rayons/${rayonSlug}`;
+
+// 2. Responsive image
+const { src: promoSrc, srcset: promoSrcset } = supabaseSrcSet(
+  image,
+  [600, 900],
+  { quality: 75 },
+);
+const promoSizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw";
+
+// 3. Mock unit price for display
+const mockWeight = 0.5; // default 500g
+const unitPrice = `${(pPromo / mockWeight).toFixed(2)} € / kg`;
+
+// 4. Brand extraction
+const words = titre.split(" ");
+const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words[0] : "MARCHÉ DE MO'";
+---
+
+<article 
+  class={`promo-card group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-neutral-100 hover:border-rouge/20 hover:shadow-lg transition-all duration-300 p-4 ${featured ? "ring-2 ring-rouge/15 bg-rouge/[0.01]" : ""}`}
+  data-culture={rayon.replace("saveurs-", "").replace("saveur-", "")}
+>
+  <!-- Card Link Wrap -->
+  <a href={href} class="block flex-1 flex flex-col">
+    <!-- Brand -->
+    <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
+      {brand}
+    </span>
+
+    <!-- Image + Circular Discount Stamp -->
+    <div class="relative aspect-[4/3] w-full overflow-hidden bg-white rounded-xl mb-4">
+      <img
+        src={promoSrc}
+        srcset={promoSrcset}
+        sizes={promoSizes}
+        alt={titre}
+        loading="lazy"
+        decoding="async"
+        width="600"
+        height="450"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      />
+      
+      <!-- Circular Promo Sticker in Rouge MDM -->
+      <div class="absolute top-3 left-3 w-12 h-12 rounded-full bg-rouge text-white flex flex-col items-center justify-center shadow-lg border border-white/20 select-none animate-pulse-glow">
+        <span class="text-[14px] font-black leading-none">-{reduction_pct}%</span>
+      </div>
+
+      <!-- Rayon tag -->
+      <span class="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-white/95 text-[10px] font-bold text-neutral-800 shadow-sm">
+        {rayonNom}
+      </span>
+    </div>
+
+    <!-- Product Title -->
+    <h3 class="font-bold text-[15.5px] leading-snug text-neutral-900 line-clamp-2 min-h-[2.8em] group-hover:text-rouge transition-colors mb-1.5">
+      {titre}
+    </h3>
+
+    {description && (
+      <p class="text-[12.5px] text-neutral-500 line-clamp-2 leading-relaxed mb-4">{description}</p>
+    )}
+  </a>
+
+  <!-- Action Pricing Footer -->
+  <div class="flex items-end justify-between border-t border-neutral-100 pt-3.5 mt-auto">
+    <!-- Pricing details -->
+    <div class="flex flex-col">
+      <!-- Promo and original prices side-by-side -->
+      <div class="flex items-baseline gap-2">
+        <div class="text-rouge font-black tracking-tight leading-none select-none">
+          <span class="text-[27px]">{promoEuros}</span>
+          <sup class="text-[14px] font-bold align-super ml-0.5">€,{promoCentimes}</sup>
+        </div>
+        <span class="text-[13px] text-neutral-400 line-through leading-none font-medium">
+          {origEuros}€,{origCentimes}
+        </span>
+      </div>
+      <span class="text-[9.5px] text-neutral-400 block mt-1.5">{unitPrice}</span>
+    </div>
+
+    <!-- Capsule Button -->
+    <button 
+      class="bg-rouge hover:bg-rouge-dark text-white rounded-full flex items-center justify-center p-2.5 shadow hover:shadow-md transition-all active:scale-95 group/btn" 
+      aria-label="Ajouter la promotion au panier"
+    >
+      <svg class="w-4 h-4 transition-transform group-hover/btn:rotate-90 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
+  </div>
+</article>

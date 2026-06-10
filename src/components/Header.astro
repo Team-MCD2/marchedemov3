@@ -1,0 +1,9 @@
+---
+import { configV3 } from "@/lib/config-v3";
+import HeaderV2 from "./HeaderV2.astro";
+import HeaderV3 from "./HeaderV3.astro";
+
+const props = Astro.props;
+---
+
+{configV3.isV3Active ? <HeaderV3 {...props} /> : <HeaderV2 {...props} />}

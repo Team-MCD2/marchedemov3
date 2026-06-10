@@ -1,0 +1,1448 @@
+---
+/**
+ * /rayons/[...path] — drill-down rayon page.
+ *
+ * Levels :
+ *   /rayons/fruits-legumes                         level 1 — categ cards
+ *   /rayons/fruits-legumes/fruits                  level 2 — sub-cat cards OR products
+ *   /rayons/fruits-legumes/fruits/exotiques        level 3 — products (leaf)
+ *
+ * Hero + promos section stays visually stable across levels via
+ * Astro View Transitions (transition:name="rayon-hero-<slug>").
+ * Only the bottom pane (catalogue area) changes, with a fade+slide.
+ *
+ * Catégorie/sous-catégorie labels come from `src/lib/taxonomie.ts`.
+ * DB rows match via produits.categorie + produits.sous_categorie
+ * (migration 001_add_taxonomie.sql).
+ */
+import Layout from "@layouts/Layout.astro";
+import Breadcrumb from "@components/Breadcrumb.astro";
+import PromoCard from "@components/PromoCard.astro";
+import RecetteCard from "@components/RecetteCard.astro";
+import FAQAccordion from "@components/FAQAccordion.astro";
+import NewsletterInline from "@components/NewsletterInline.astro";
+import LocalVideoPlayer from "@components/islands/LocalVideoPlayer.jsx";
+import { getCollection } from "astro:content";
+import { RAYONS, RAYONS_LIST, SITE, type RayonSlug } from "@/lib/site";
+import { faqsForRayon } from "@/lib/faqs";
+import { breadcrumbSchema } from "@/lib/schema";
+import { supabase } from "@/lib/supabase";
+import { getPromosForRayon } from "@/lib/promos-repo";
+import { getRecettesForRayon } from "@/lib/recettes";
+import { bannersForRayon, crossRefBannersForRayon, type Banner } from "@/lib/banners";
+import {
+  TAXONOMIE,
+  getCategories,
+  getSousCategories,
+  categorieLabelFromSlug,
+  sousCategorieLabelFromSlug,
+  getDrillDownPaths,
+  slugifyCat,
+} from "@/lib/taxonomie";
+import { getCategorieImage, getSousCategorieImage } from "@/data/category-images";
+
+/* ------------------------------------------------------------
+   Pre-rendered paths — every (rayon, cat, sub) combination.
+-------------------------------------------------------------- */
+export async function getStaticPaths() {
+  const paths: { params: { path: string } }[] = [];
+  for (const rayon of RAYONS_LIST) {
+    paths.push({ params: { path: rayon.slug } });
+    const drillDowns = getDrillDownPaths(rayon.slug);
+    for (const { cat, sub } of drillDowns) {
+      paths.push({ params: { path: `${rayon.slug}/${cat}${sub ? `/${sub}` : ""}` } });
+    }
+  }
+  return paths;
+}
+
+/* ------------------------------------------------------------
+   Parse URL → (rayon, cat, sub)
+-------------------------------------------------------------- */
+const rawPath = Astro.params.path ?? "";
+const parts = rawPath.split("/").filter(Boolean);
+const [rayonSlug, catSlug, subSlug] = parts as [RayonSlug, string | undefined, string | undefined];
+
+const rayon = RAYONS[rayonSlug];
+if (!rayon) {
+  return Astro.redirect("/rayons");
+}
+
+/* Validate optional cat/sub against taxonomie */
+const catLabel = catSlug ? categorieLabelFromSlug(rayonSlug, catSlug) : null;
+if (catSlug && !catLabel) {
+  return Astro.redirect(`/rayons/${rayonSlug}`);
+}
+const subLabel = catSlug && subSlug
+  ? sousCategorieLabelFromSlug(rayonSlug, catSlug, subSlug)
+  : null;
+if (subSlug && !subLabel) {
+  return Astro.redirect(`/rayons/${rayonSlug}/${catSlug}`);
+}
+
+const level = subSlug ? 3 : catSlug ? 2 : 1;
+const isCulturel = rayon.culturel;
+const heroTheme = isCulturel ? "rayon-hero--dark" : "rayon-hero--light";
+
+/* Compact hero on deeper levels (we keep the image smaller, text smaller) */
+const heroCompact = level > 1;
+
+/* ------------------------------------------------------------
+   Data fetching
+-------------------------------------------------------------- */
+
+/* Promos du rayon — constantes à travers les 3 niveaux */
+const promos = await getPromosForRayon(rayonSlug);
+
+/* Videos du rayon */
+const videos = (await getCollection("videos"))
+  .filter((v) => v.data.actif && v.data.rayon === rayonSlug)
+  .sort((a, b) => a.data.ordre - b.data.ordre);
+
+/* Recettes qui utilisent ce rayon — cross-linking produits → cuisine.
+   Cherche dans Collection.rayons[] (array, pas juste rayonPrincipal). */
+const recettesRayon = await getRecettesForRayon(rayonSlug, 3);
+
+/* --------------------------------------------------------------
+   CATALOGUE  — 3 modes selon le niveau :
+   ● level 1 : aucun fetch DB, grille de categorie cards (taxonomie).
+   ● level 2 : si sous-catégories existent → cards sous-catégories.
+               sinon → produits filtrés par (rayon, categorie).
+   ● level 3 : produits filtrés par (rayon, categorie, sous_categorie).
+-------------------------------------------------------------- */
+type CatalogueRow = {
+  id: string;
+  slug: string;
+  nom: string;
+  image_url: string | null;
+  badge: string | null;
+  origine: string | null;
+  unite: string | null;
+  description: string | null;
+  categorie: string | null;
+  sous_categorie: string | null;
+};
+
+const categoriesNiveau1 = getCategories(rayonSlug);
+const sousCategoriesNiveau2 = catSlug ? getSousCategories(rayonSlug, catSlug) : null;
+
+/* When we need to show products (level 2 leaf OR level 3) */
+let produits: CatalogueRow[] = [];
+const needsProducts =
+  (level === 2 && !sousCategoriesNiveau2) || /* level 2 leaf */
+  level === 3;                                /* level 3 always */
+
+if (needsProducts) {
+  try {
+    let q = supabase
+      .from("produits")
+      .select("id, slug, nom, image_url, badge, origine, unite, description, categorie, sous_categorie")
+      .eq("rayon", rayonSlug)
+      .order("ordre", { ascending: true })
+      .order("nom", { ascending: true });
+
+    if (catLabel) q = q.eq("categorie", catLabel);
+    if (subLabel) q = q.eq("sous_categorie", subLabel);
+
+    const { data, error } = await q;
+    if (error) {
+      console.warn(`[rayon ${rayonSlug}] products query error :`, error.message);
+    } else {
+      produits = data ?? [];
+    }
+  } catch (e: any) {
+    console.warn(`[rayon ${rayonSlug}] Supabase unreachable :`, e?.message || e);
+  }
+}
+
+/* For level 1, count products + get 1 representative image per categorie.
+   Avoids the "every card shows the same rayon photo" bug — each category
+   card now shows a real product image from its own category. */
+let produitsPerCategorie: Record<string, number> = {};
+let imagesPerCategorie: Record<string, string> = {};
+if (level === 1 && categoriesNiveau1) {
+  const categorieLabelBySlug = new Map(categoriesNiveau1.map((c) => [slugifyCat(c.label), c.label]));
+  try {
+    const { data, error } = await supabase
+      .from("produits")
+      .select("categorie, image_url, ordre")
+      .eq("rayon", rayonSlug)
+      .eq("actif", true)
+      .order("ordre", { ascending: true });
+    if (!error && data) {
+      for (const r of data) {
+        const key = r.categorie
+          ? (categorieLabelBySlug.get(slugifyCat(r.categorie)) ?? "Autres")
+          : "Autres";
+        produitsPerCategorie[key] = (produitsPerCategorie[key] ?? 0) + 1;
+        /* First image wins (ordre asc). Keep only products that actually
+           have an image so we don't fall back to empty URLs. */
+        if (r.image_url && !imagesPerCategorie[key]) {
+          imagesPerCategorie[key] = r.image_url;
+        }
+      }
+    }
+  } catch {}
+  /* Static handpicked images always win over DB-derived ones. */
+  for (const c of categoriesNiveau1) {
+    const pick = getCategorieImage(rayonSlug, c.label);
+    if (pick) imagesPerCategorie[c.label] = pick;
+  }
+}
+
+/* For level 2 with sub-categories, count products + representative image per sous_cat */
+let produitsPerSousCat: Record<string, number> = {};
+let imagesPerSousCat: Record<string, string> = {};
+/* Filtered list — empty sub-cats with no curated image are hidden so the
+   user doesn't land on dead-end cards (e.g. "0 produits"). Sub-cats that
+   have a handpicked static image are kept (signals "à venir" cleanly). */
+let visibleSousCategories: typeof sousCategoriesNiveau2 = sousCategoriesNiveau2;
+if (level === 2 && sousCategoriesNiveau2 && catLabel) {
+  const sousCatLabelBySlug = new Map(sousCategoriesNiveau2.map((s) => [slugifyCat(s.label), s.label]));
+  try {
+    const { data, error } = await supabase
+      .from("produits")
+      .select("sous_categorie, image_url, ordre")
+      .eq("rayon", rayonSlug)
+      .eq("categorie", catLabel)
+      .eq("actif", true)
+      .order("ordre", { ascending: true });
+    if (!error && data) {
+      for (const r of data) {
+        const key = r.sous_categorie
+          ? (sousCatLabelBySlug.get(slugifyCat(r.sous_categorie)) ?? "Autres")
+          : "Autres";
+        produitsPerSousCat[key] = (produitsPerSousCat[key] ?? 0) + 1;
+        if (r.image_url && !imagesPerSousCat[key]) {
+          imagesPerSousCat[key] = r.image_url;
+        }
+      }
+    }
+  } catch {}
+  /* Static handpicked sous-categorie images always win. */
+  for (const s of sousCategoriesNiveau2) {
+    const pick = getSousCategorieImage(rayonSlug, catLabel, s.label);
+    if (pick) imagesPerSousCat[s.label] = pick;
+  }
+  /* Now derive the visible list :
+     - keep sub-cats with at least 1 product
+     - also keep sub-cats with a handpicked image (curated "à venir")
+     This drops dead-end cards from the page so the heading count
+     and the rendered grid stay consistent. */
+  visibleSousCategories = sousCategoriesNiveau2.filter((s) => {
+    const count = produitsPerSousCat[s.label] ?? 0;
+    return count > 0 || !!imagesPerSousCat[s.label];
+  });
+  /* Edge case : if every sub-cat ended up filtered out, fall back to
+     showing them all (better than rendering an empty page). */
+  if (visibleSousCategories.length === 0) {
+    visibleSousCategories = sousCategoriesNiveau2;
+  }
+}
+
+/* When the leaf is empty, surface a few popular products from the same
+   rayon so the user has somewhere to go instead of a dead end. */
+let suggestionsRayon: CatalogueRow[] = [];
+if (needsProducts && produits.length === 0) {
+  try {
+    const { data } = await supabase
+      .from("produits")
+      .select("id, slug, nom, image_url, badge, origine, unite, description, categorie, sous_categorie")
+      .eq("rayon", rayonSlug)
+      .eq("actif", true)
+      .not("image_url", "is", null)
+      .order("ordre", { ascending: true })
+      .order("nom", { ascending: true })
+      .limit(6);
+    suggestionsRayon = data ?? [];
+  } catch {}
+}
+
+/* ------------------------------------------------------------
+   Cultural banners (level 1 only)
+   ------------------------------------------------------------
+   Two banner sets per rayon :
+     - `primaryBanners`   : full chips, shown as "Cultures du rayon"
+                             (e.g. Maghreb + Italie on saveur-mediterranee)
+     - `crossRefBanners`  : compact chips, shown as "Voyages dans le
+                             rayon" (e.g. Maghreb + Inde on
+                             epices-du-monde) — narrative DA reuse so
+                             that spices mentioned by name keep their
+                             cultural identity even outside the parent
+                             cultural rayon.
+   Per-rayon section copy is defined in CULTURE_COPY below so the
+   editorial tone matches the rayon (e.g. "Les deux faces de la
+   Méditerranée" only makes sense on saveur-mediterranee). Fallback
+   copy is used for any rayon not explicitly listed. */
+const primaryBanners = level === 1 ? bannersForRayon(rayonSlug) : [];
+const crossRefBanners = level === 1 ? crossRefBannersForRayon(rayonSlug) : [];
+
+/* Determine section-level cultures for theme propagation at all levels */
+const sectionPrimaryBanners = bannersForRayon(rayonSlug);
+const sectionCrossRefBanners = crossRefBannersForRayon(rayonSlug);
+const pageBanners = sectionPrimaryBanners.length > 0 ? sectionPrimaryBanners : (sectionCrossRefBanners.length > 1 ? sectionCrossRefBanners : []);
+
+const promoCulture = pageBanners.length > 0 ? pageBanners[0].slug : undefined;
+const promoCultureLabel = pageBanners.length > 0 ? pageBanners[0].label : undefined;
+
+const catalogueCulture = pageBanners.length > 1 ? pageBanners[1].slug : (pageBanners.length === 1 ? pageBanners[0].slug : undefined);
+const catalogueCultureLabel = pageBanners.length > 1 ? pageBanners[1].label : (pageBanners.length === 1 ? pageBanners[0].label : undefined);
+
+const videoCulture = pageBanners.length > 0 ? pageBanners[0].slug : undefined;
+const videoCultureLabel = pageBanners.length > 0 ? pageBanners[0].label : undefined;
+
+const recetteCulture = pageBanners.length > 1 ? pageBanners[1].slug : (pageBanners.length === 1 ? pageBanners[0].slug : undefined);
+const recetteCultureLabel = pageBanners.length > 1 ? pageBanners[1].label : (pageBanners.length === 1 ? pageBanners[0].label : undefined);
+
+/* ------------------------------------------------------------
+   Hero section-BG cultural DA (boss's directive : "tu doit copier
+   la disgin / suivre la même DA").
+   ------------------------------------------------------------
+   On level-1 cultural rayons, the hero <section> gets an extra
+   absolutely-positioned backdrop layer (`.rayon-hero-bg`) that
+   crossfades the registry banner artwork (/images/banners/*.jpg)
+   behind everything. The right-side 4:5 photographic slideshow
+   STAYS UNCHANGED — both DAs coexist : palette + cultural artwork
+   in the backdrop, rayon photography in the foreground card.
+
+   Rotation rules — pure CSS, reuses the .rayon-slideshow keyframes
+   (8 s cycle for N=2, 12 s for N=3, 16 s for N=4) :
+     · ≥ 2 primary banners       → banner A ⇄ banner B
+       (saveurs-asie: asie ⇄ inde ; saveur-mediterranee: maghreb ⇄ italie)
+     · exactly 1 primary banner  → "current hero look" ⇄ banner
+       (saveurs-afrique: empty ⇄ créole ; produits-courants: empty ⇄ hygiène)
+       The "empty" slide is a transparent placeholder so the crossfade
+       reveals the palette gradient + .rayon-motif underneath — i.e.
+       exactly what the page looked like before this DA layer existed.
+     · 0 primary + ≥ 2 cross-ref → cross-ref A ⇄ cross-ref B
+       (epices-du-monde: maghreb ⇄ inde — same artwork as parent rayons)
+
+   Level > 1 (cat / sous-cat) keeps the unchanged hero — deeper
+   levels focus on a specific category and the banner DA would
+   compete with the in-rayon narrative. */
+const heroBgBanners: Banner[] = (() => {
+  if (level !== 1) return [];
+  if (primaryBanners.length >= 1) return primaryBanners;
+  if (crossRefBanners.length >= 2) return crossRefBanners;
+  return [];
+})();
+const heroHasBgDa = heroBgBanners.length > 0;
+
+/* Slide spec for the backdrop slideshow. `kind: "empty"` is the
+   transparent placeholder used on single-banner rayons so the
+   rotation alternates current-hero ⇄ banner-DA per the user's
+   explicit request for saveurs-afrique. */
+type HeroBgSlide =
+  | { kind: "banner"; src: string; alt: string; banner: Banner }
+  | { kind: "empty"; banner: Banner };
+const heroBgSlides: HeroBgSlide[] = heroHasBgDa
+  ? (heroBgBanners.length === 1
+      ? [
+          { kind: "empty" as const, banner: heroBgBanners[0] },
+          {
+            kind: "banner" as const,
+            src: heroBgBanners[0].image,
+            alt: `Décor culturel ${heroBgBanners[0].label} — Marché de Mo'`,
+            banner: heroBgBanners[0],
+          },
+        ]
+      : heroBgBanners.map((b) => ({
+          kind: "banner" as const,
+          src: b.image,
+          alt: `Décor culturel ${b.label} — Marché de Mo'`,
+          banner: b,
+        })))
+  : [];
+const heroBgSlideCount = Math.min(heroBgSlides.length, 4);
+
+/* Primary banner = first slide's banner. Drives the static palette
+   tokens on the .rayon-hero-bg container so the gradient overlay
+   keeps the right hue even mid-crossfade. */
+const heroBgPrimaryBanner = heroBgBanners[0];
+
+interface CultureCopy {
+  eyebrow: string;
+  title: string;
+  intro: string;
+}
+const CULTURE_COPY: Partial<Record<RayonSlug, { primary?: CultureCopy; crossRef?: CultureCopy }>> = {
+  "saveurs-afrique": {
+    primary: {
+      eyebrow: "Au-delà de l'Afrique",
+      title: "L'Afrique, et la Caraïbe au passage.",
+      intro:
+        "Notre rayon embrasse aussi les saveurs créoles — Antilles, Réunion, Caraïbes. Les ingrédients qu'il faut pour cuisiner antillais, sans changer de rayon.",
+    },
+  },
+  "saveurs-asie": {
+    primary: {
+      eyebrow: "Cultures du rayon",
+      title: "L'Asie, ses voisins, ses épices.",
+      intro:
+        "Du Pacifique à l'océan Indien — un rayon, deux grammaires culinaires. Japon, Corée, Thaïlande, Vietnam, Chine — et l'Inde, qui mérite sa propre identité.",
+    },
+  },
+  "saveur-mediterranee": {
+    primary: {
+      eyebrow: "Les deux faces de la Méditerranée",
+      title: "Du Maghreb à l'Italie.",
+      intro:
+        "Un même soleil, deux cuisines. Olives, huile d'olive, harissa, pâtes, antipasti — l'épicerie méditerranéenne dans toute sa richesse, sans hiérarchie.",
+    },
+  },
+  "epices-du-monde": {
+    crossRef: {
+      eyebrow: "Voyages dans le rayon",
+      title: "Les épices voyagent — du Maghreb à l'Inde.",
+      intro:
+        "Ras el hanout, za'atar, piment berbère, harissa · curry de Madras, garam masala, cardamome, safran iranien. L'offre la plus complète de l'agglomération, importée en direct, sans intermédiaire.",
+    },
+  },
+  "produits-courants": {
+    primary: {
+      eyebrow: "Au-delà de l'alimentaire",
+      title: "L'essentiel du quotidien.",
+      intro:
+        "Hygiène, soins, entretien — les marques connues du quotidien, à prix discount, sans transiger sur la qualité.",
+    },
+  },
+};
+const culturePrimaryCopy = CULTURE_COPY[rayonSlug]?.primary;
+const cultureCrossRefCopy = CULTURE_COPY[rayonSlug]?.crossRef;
+
+/* Other rayons pour cross-linking */
+const otherRayons = RAYONS_LIST.filter((r) => r.slug !== rayonSlug).slice(0, 4);
+
+/* Breadcrumb dynamique selon le niveau */
+const breadcrumbItems = [
+  { name: "Nos rayons", href: "/rayons" },
+  { name: rayon.nom, href: `/rayons/${rayonSlug}` },
+  ...(catLabel ? [{ name: catLabel, href: `/rayons/${rayonSlug}/${catSlug}` }] : []),
+  ...(subLabel ? [{ name: subLabel }] : []),
+];
+const breadcrumbItemsLast = [...breadcrumbItems];
+/* Dernier item sans href (current page) */
+if (breadcrumbItemsLast.length > 0) {
+  const last = { ...breadcrumbItemsLast[breadcrumbItemsLast.length - 1] };
+  delete (last as any).href;
+  breadcrumbItemsLast[breadcrumbItemsLast.length - 1] = last;
+}
+
+const bcSchemaItems = breadcrumbItemsLast.map((it) => ({
+  name: it.name,
+  url: (it as any).href ?? Astro.url.pathname,
+}));
+const bc = breadcrumbSchema(bcSchemaItems);
+
+const faqItems = faqsForRayon(rayonSlug);
+
+/* Slideshow hero : identique à la RayonCard home — ≥ 2 images → crossfade CSS. */
+const uniqueSlides = Array.from(new Set(rayon.heroSlideshow ?? []));
+const slideshowActive = uniqueSlides.length >= 2;
+const slideCount = Math.min(uniqueSlides.length, 4);
+
+/* Page title/desc contextualisés selon niveau */
+const pageTitle = (() => {
+  if (level === 3) return `${subLabel} — ${catLabel} · ${rayon.nom}`;
+  if (level === 2) return `${catLabel} · ${rayon.nom}`;
+  return `${rayon.nom} · Marché de Mo' — ${rayon.keywords[0]}`;
+})();
+const pageDesc = (() => {
+  if (level >= 2) {
+    const scope = level === 3 ? `${subLabel} (${catLabel})` : catLabel;
+    return `Découvrez notre sélection ${scope} au rayon ${rayon.nomCourt} du Marché de Mo'.`;
+  }
+  return rayon.description;
+})();
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDesc}
+  faqItems={faqItems}
+  schema={bc}
+  heroImage={rayon.image}
+  bodyDataRayon={rayonSlug}
+>
+  <!-- HERO : persiste visuellement entre niveaux via View Transitions -->
+  <section
+    class={`rayon-hero ${heroTheme} relative overflow-hidden ${heroCompact ? "rayon-hero--compact" : ""}`}
+    transition:name={`rayon-hero-${rayonSlug}`}
+  >
+    {/* Cultural-DA backdrop : reproduces the banner artwork as the
+        hero section's background. Each slide is the actual banner JPG
+        (object-fit: cover so the rotated culture word zone dominates
+        the visible band, palette flanks crop). The palette overlay on
+        top guarantees text contrast on the left where the title lives,
+        while the right half stays clear so the artwork reads through.
+        Slideshow rotation reuses the global .rayon-slideshow keyframes.
+        See heroBgSlides spec in the script block above. */}
+    {heroHasBgDa && heroBgPrimaryBanner && (
+      <div
+        class="rayon-hero-bg absolute inset-0 pointer-events-none"
+        data-culture={heroBgPrimaryBanner.slug}
+        style={`--culture-from: ${heroBgPrimaryBanner.palette.from}; --culture-to: ${heroBgPrimaryBanner.palette.to}; --culture-accent: ${heroBgPrimaryBanner.palette.accent};`}
+        aria-hidden="true"
+      >
+        <div class="rayon-hero-bg__slides rayon-slideshow" data-slides={heroBgSlideCount}>
+          {heroBgSlides.slice(0, 4).map((s) => (
+            <div
+              class:list={[
+                "rayon-slide",
+                "rayon-hero-bg__slide",
+                `rayon-hero-bg__slide--${s.kind}`,
+              ]}
+              data-culture={s.banner.slug}
+              aria-hidden="true"
+            >
+              {s.kind === "banner" && (
+                <>
+                  <div class="rayon-hero-bg__motif" aria-hidden="true"></div>
+                  <span class="rayon-hero-bg__word" aria-hidden="true">{s.banner.label}</span>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        <div class="rayon-hero-bg__overlay"></div>
+      </div>
+    )}
+
+    <div class="rayon-motif absolute inset-0 pointer-events-none"></div>
+
+    <Breadcrumb items={breadcrumbItemsLast} darkText={isCulturel} />
+
+    <div class={`container-mo relative z-10 grid lg:grid-cols-12 gap-10 items-center ${heroCompact ? "pt-2 pb-8 md:pt-3 md:pb-10" : "pt-4 pb-14 md:pt-6 md:pb-20"}`}>
+      <div class={heroCompact ? "lg:col-span-8" : "lg:col-span-7"}>
+        <span class="eyebrow rayon-eyebrow">
+          {rayon.eyebrow}
+        </span>
+        <h1 class={`${heroCompact ? "display-md" : "display-xl"} mt-3 text-balance rayon-title`} data-split-reveal>
+          {level === 3 ? subLabel : level === 2 ? catLabel : rayon.nom}
+        </h1>
+        {level === 1 && (
+          <>
+            <p class="mt-6 text-[18px] md:text-[20px] leading-snug max-w-2xl rayon-tagline">
+              {rayon.tagline}
+            </p>
+            <p class="mt-4 text-[15px] leading-relaxed max-w-2xl rayon-lead">
+              {rayon.longDescription}
+            </p>
+            <div class="mt-8 flex flex-wrap gap-2">
+              {rayon.featured.map((f) => (
+                <span class="pill rayon-pill">{f}</span>
+              ))}
+            </div>
+
+            {/* Encart saisonnalité — spécifique au rayon fruits-legumes.
+                Le lien vers mangerbouger.fr (ministère de la Santé) renforce
+                la crédibilité SEO de Mo' sur le critère "manger de saison" et
+                signale un positionnement fraîcheur aux visiteurs. */}
+            {rayonSlug === "fruits-legumes" && (
+              <div class="mt-8 max-w-xl rayon-saison-encart">
+                <div class="flex items-start gap-4 p-5 rounded-2xl bg-white/90 ring-1 ring-black/10 backdrop-blur-sm shadow-sm">
+                  <span
+                    aria-hidden="true"
+                    class="shrink-0 w-10 h-10 rounded-full bg-vert/10 text-vert flex items-center justify-center"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 2a10 10 0 0 0-7.35 16.77c.18.14.35.29.5.45M12 2a10 10 0 0 1 7.35 16.77 10.02 10.02 0 0 1-.5.45M12 2v20" stroke-linecap="round"/>
+                      <path d="M2 12h20" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <div class="min-w-0">
+                    <p class="font-soft font-bold text-[15px] md:text-[16px] text-noir leading-snug">
+                      Envie de manger de saison ?
+                    </p>
+                    <p class="mt-1 text-[13.5px] text-neutral-700 leading-relaxed">
+                      Consultez le calendrier officiel des fruits et légumes du moment publié
+                      par <strong>mangerbouger.fr</strong>, service du Ministère de la Santé.
+                    </p>
+                    <a
+                      href="https://www.mangerbouger.fr/l-essentiel/les-recommandations-sur-l-alimentation/fruits-et-legumes-de-saison"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-bold text-vert hover:text-vert-dark link-draw"
+                    >
+                      Voir le calendrier de saison
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M7 17l10-10M7 7h10v10" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {level >= 2 && (
+          <p class="mt-4 text-[15px] leading-relaxed max-w-2xl rayon-lead opacity-80">
+            Une sélection représentative {level === 3 ? `de ${subLabel}` : ''} au rayon {rayon.nomCourt}.
+          </p>
+        )}
+
+        <div class={`${heroCompact ? "mt-6" : "mt-10"} flex flex-wrap gap-3`}>
+          {level > 1 && (
+            <a href={level === 3 ? `/rayons/${rayonSlug}/${catSlug}` : `/rayons/${rayonSlug}`} class="btn rayon-btn-ghost btn-sheen">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Retour
+            </a>
+          )}
+          <a href="/magasins" class="btn rayon-btn-primary btn-sheen">
+            Trouver un magasin
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          {promos.length > 0 && (
+            <a href="#promos" class="btn rayon-btn-ghost">
+              Voir les {promos.length} promo{promos.length > 1 ? "s" : ""}
+            </a>
+          )}
+        </div>
+      </div>
+
+      <div class={heroCompact ? "lg:col-span-4" : "lg:col-span-5"}>
+        <div class={`relative rounded-[40px] overflow-hidden shadow-2xl ring-1 ring-black/5 ${heroCompact ? "aspect-[4/3]" : "aspect-[4/5]"}`}>
+          {slideshowActive ? (
+            <div
+              class="rayon-slideshow absolute inset-0"
+              data-slides={slideCount}
+              data-parallax="0.25"
+              transition:name={`rayon-card-${rayonSlug}`}
+            >
+              {uniqueSlides.slice(0, 4).map((src, i) => (
+                <img
+                  src={src}
+                  alt={i === 0 ? rayon.imageAlt : ""}
+                  aria-hidden={i > 0 ? "true" : undefined}
+                  class="rayon-slide"
+                  fetchpriority={i === 0 ? "high" : undefined}
+                  loading={i === 0 ? undefined : "lazy"}
+                  width="800"
+                  height="1000"
+                  decoding="async"
+                />
+              ))}
+            </div>
+          ) : (
+            <img
+              src={rayon.image}
+              alt={rayon.imageAlt}
+              data-parallax="0.25"
+              transition:name={`rayon-card-${rayonSlug}`}
+              class="w-full h-full object-cover"
+              fetchpriority="high"
+              width="800"
+              height="1000"
+              decoding="async"
+            />
+          )}
+          <div class="rayon-img-overlay absolute inset-0 pointer-events-none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROMOS : ne changent pas entre les niveaux -->
+  {promos.length > 0 && (
+    <section
+      id="promos"
+      class="section bg-blanc"
+      data-culture={promoCulture}
+      transition:name={`rayon-promos-${rayonSlug}`}
+    >
+      <div class="container-mo">
+        <span class:list={["eyebrow reveal", !promoCulture && "!text-rouge"]}>Promos {rayon.nomCourt}</span>
+        <h2 class="display-md mt-4 max-w-2xl text-balance reveal" data-watermark={promoCultureLabel}>
+          Les offres du rayon cette semaine.
+        </h2>
+
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-reveal-stagger>
+          {promos.map((p) => (
+            <div class="reveal">
+              <PromoCard
+                slug={p.slug}
+                titre={p.data.titre}
+                description={p.data.description}
+                image={p.data.image}
+                prix_original={p.data.prix_original}
+                prix_promo={p.data.prix_promo}
+                reduction_pct={p.data.reduction_pct}
+                rayon={p.data.rayon}
+                magasin={p.data.magasin}
+                date_fin={p.data.date_fin}
+                featured={p.data.mise_en_avant}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+
+
+  {/* PRODUITS DU MOMENT — grille sensorielle fruits-legumes (plan § IV).
+      Vitrine visuelle, pas un catalogue. Level 1 uniquement. Images
+      Wixstatic identifiées et déjà téléchargées en local. */}
+  {level === 1 && rayonSlug === "fruits-legumes" && (
+    <section class="section bg-blanc border-t border-black/5">
+      <div class="container-mo">
+        <div class="max-w-2xl mb-10">
+          <span class="eyebrow reveal">Nos produits du moment</span>
+          <h2 class="display-md mt-4 text-balance reveal">
+            Ce matin, <span class="text-vert">sur nos étals.</span>
+          </h2>
+          <p class="mt-3 text-[15px] text-neutral-600 leading-relaxed reveal">
+            Un aperçu sensoriel des primeurs arrivés ce matin. Pas de prix ici :
+            ils sont affichés en rayon, à l'euro près, week-end compris.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
+          {[
+            { nom: "Citron", img: "/images/rayons/fruits-legumes/citron.jpg" },
+            { nom: "Citron vert", img: "/images/rayons/fruits-legumes/citron-vert.jpg" },
+            { nom: "Pamplemousse", img: "/images/rayons/fruits-legumes/pamplemousse.jpg" },
+            { nom: "Kiwi", img: "/images/rayons/fruits-legumes/kiwi.jpg" },
+            { nom: "Pomme Golden", img: "/images/rayons/fruits-legumes/pomme-golden.jpg" },
+            { nom: "Poire", img: "/images/rayons/fruits-legumes/poire.jpg" },
+            { nom: "Nectarine", img: "/images/rayons/fruits-legumes/nectarine.jpg" },
+            { nom: "Pêche", img: "/images/rayons/fruits-legumes/peche.jpg" },
+            { nom: "Prune", img: "/images/rayons/fruits-legumes/prune.jpg" },
+            { nom: "Pruneaux", img: "/images/rayons/fruits-legumes/pruneaux.jpg" },
+            { nom: "Raisin", img: "/images/rayons/fruits-legumes/raisin.jpg" },
+            { nom: "Oignon rouge", img: "/images/rayons/fruits-legumes/oignon-rouge.jpg" },
+            { nom: "Échalote", img: "/images/rayons/fruits-legumes/echalotte.jpg" },
+            { nom: "Navet", img: "/images/rayons/fruits-legumes/navet.jpg" },
+          ].map((p) => (
+            <figure
+              class="reveal reveal-scale group relative bg-white rounded-2xl overflow-hidden ring-1 ring-black/5 hover:ring-black/10 hover:shadow-card hover:-translate-y-0.5 transition-all"
+            >
+              <div class="aspect-square overflow-hidden bg-white">
+                <img
+                  src={p.img}
+                  alt={p.nom}
+                  class="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <figcaption class="px-3 py-2.5 text-center font-soft font-bold text-[14px] md:text-[15px] text-noir">
+                {p.nom}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <p class="mt-8 text-center text-[13px] text-neutral-500 italic">
+          Sélection représentative. Plus de 120 fruits et légumes en rayon, dont
+          une soixantaine d'exotiques rarement trouvés en grande surface classique.
+        </p>
+      </div>
+    </section>
+  )}
+
+  <!-- CATALOGUE : drill-down -->
+  {promos.length > 0 && catalogueCulture && (
+    <div class="culture-divider" data-culture={catalogueCulture} />
+  )}
+  <section
+    id="catalogue"
+    class="section bg-white"
+    data-culture={catalogueCulture}
+    transition:animate="slide"
+  >
+    <div class="container-mo">
+      <!-- En-tête catalogue + navigation textuelle rapide -->
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+        <div class="max-w-2xl">
+          <span class="eyebrow reveal">
+            {level === 1 && "Explorer le rayon"}
+            {level === 2 && `${catLabel}`}
+            {level === 3 && `${subLabel} · ${catLabel}`}
+          </span>
+          <h2 class="display-md mt-4 text-balance reveal" data-watermark={catalogueCultureLabel}>
+            {level === 1 && (<>Choisissez une catégorie<br/><span class="text-vert">pour affiner.</span></>)}
+            {level === 2 && sousCategoriesNiveau2 && visibleSousCategories && (<>{visibleSousCategories.length} sélection{visibleSousCategories.length > 1 ? "s" : ""}<br/><span class="text-vert">{catLabel}.</span></>)}
+            {level === 2 && !sousCategoriesNiveau2 && produits.length > 0 && (<>{produits.length} produits<br/><span class="text-vert">en {catLabel}.</span></>)}
+            {level === 3 && produits.length > 0 && (<>{produits.length} produits<br/><span class="text-vert">{subLabel}.</span></>)}
+            {(level === 2 || level === 3) && produits.length === 0 && !sousCategoriesNiveau2 && (<>Catalogue en cours<br/><span class="text-vert">de constitution.</span></>)}
+          </h2>
+          {level === 1 && (
+            <p class="mt-3 text-[15px] text-neutral-600 leading-relaxed reveal">
+              Chaque catégorie regroupe les produits représentatifs que vous trouverez en rayon. Les prix restent affichés en magasin, à l'euro près.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* LEVEL 1 : category cards */}
+      {level === 1 && categoriesNiveau1 && (
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8" data-reveal-stagger>
+          {categoriesNiveau1.map((cat) => {
+            const count = produitsPerCategorie[cat.label] ?? 0;
+            return (
+              <a
+                href={`/rayons/${rayonSlug}/${cat.slug}`}
+                class="reveal reveal-scale group relative block bg-white rounded-3xl overflow-hidden shadow-lg card-float transition-all duration-300 ring-1 ring-black/5 hover:shadow-xl"
+              >
+                <div class="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-white via-neutral-100 to-[#EEEAE0]">
+                  {imagesPerCategorie[cat.label] ? (
+                    <>
+                      <img
+                        src={imagesPerCategorie[cat.label]}
+                        alt={cat.label}
+                        class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.08] transition-transform duration-500 img-optimizable"
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.parentElement.classList.add('image-fallback')"
+                        onload="this.parentElement.classList.remove('image-fallback'); this.classList.add('loaded')"
+                      />
+                      <div class="absolute inset-0 bg-gradient-enhanced"></div>
+                    </>
+                  ) : (
+                    <div
+                      class="absolute inset-0"
+                      style={`background: linear-gradient(135deg, color-mix(in srgb, ${rayon.accent ?? '#1C6B35'} 22%, #FFF8EC) 0%, color-mix(in srgb, ${rayon.accent ?? '#1C6B35'} 6%, #FFF8EC) 100%);`}
+                      aria-hidden="true"
+                    >
+                      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.5),transparent_65%)]"></div>
+                    </div>
+                  )}
+                  <div class="absolute inset-0 flex items-end p-5">
+                    <h3 class={`font-soft font-bold text-[22px] md:text-[28px] leading-tight transition-colors drop-shadow-lg ${imagesPerCategorie[cat.label] ? "text-white" : "text-noir group-hover:text-vert"}`}>
+                      {cat.label}
+                    </h3>
+                  </div>
+                  {count > 0 && (
+                    <span class="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 text-[11px] font-bold text-vert shadow-sm">
+                      {count} produit{count > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <div class="p-5 flex items-center justify-between gap-3">
+                  <p class="text-[13px] text-neutral-600 font-pro font-medium">
+                    {cat.hasChildren ? "Plusieurs sélections" : "Voir les produits"}
+                  </p>
+                  <span class="text-vert font-bold text-[13px] inline-flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
+                    Explorer
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      )}
+
+      {/* LEVEL 2 with sub-categories : sub-cat cards (filtered) */}
+      {level === 2 && visibleSousCategories && visibleSousCategories.length > 0 && (
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5" data-reveal-stagger>
+          {visibleSousCategories.map((sub) => {
+            const count = produitsPerSousCat[sub.label] ?? 0;
+            return (
+              <a
+                href={`/rayons/${rayonSlug}/${catSlug}/${sub.slug}`}
+                class="reveal reveal-scale group relative block bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ring-1 ring-black/5 aspect-[3/4]"
+              >
+                {imagesPerSousCat[sub.label] ? (
+                  <>
+                    <img
+                      src={imagesPerSousCat[sub.label]}
+                      alt={sub.label}
+                      class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 img-optimizable"
+                      loading="lazy"
+                      decoding="async"
+                      onerror="this.parentElement.classList.add('image-fallback')"
+                      onload="this.parentElement.classList.remove('image-fallback'); this.classList.add('loaded')"
+                    />
+                    <div class="absolute inset-0 bg-gradient-enhanced"></div>
+                    <div class="relative h-full p-4 md:p-5 flex flex-col justify-end">
+                      <h3 class="font-soft font-bold text-[16px] md:text-[18px] leading-tight text-white drop-shadow-lg">
+                        {sub.label}
+                      </h3>
+                      {count > 0 && (
+                        <p class="mt-1.5 text-[12px] text-white/80 font-pro">
+                          {count} produit{count > 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div class="absolute inset-0 bg-gradient-to-br from-white to-neutral-100 opacity-60 group-hover:opacity-90 transition-opacity"></div>
+                    <div class="relative h-full p-4 md:p-5 flex flex-col justify-between">
+                      <div class="w-10 h-10 rounded-xl bg-vert/10 flex items-center justify-center group-hover:bg-vert/20 transition-colors">
+                        <svg class="w-5 h-5 text-vert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 class="font-soft font-bold text-[16px] md:text-[18px] leading-tight text-noir">
+                          {sub.label}
+                        </h3>
+                        {count > 0 && (
+                          <p class="mt-1.5 text-[12px] text-neutral-500 font-pro">
+                            {count} produit{count > 1 ? "s" : ""}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </a>
+            );
+          })}
+        </div>
+      )}
+
+      {/* LEVEL 2 leaf OR LEVEL 3 : products grid */}
+      {(level === 3 || (level === 2 && !sousCategoriesNiveau2)) && produits.length > 0 && (
+        <div
+          class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5"
+          data-reveal-stagger
+          data-reveal-step="50"
+        >
+          {produits.map((p) => (
+            <article class="produit-card reveal group">
+              <div class="relative aspect-square rounded-2xl overflow-hidden ring-1 ring-black/5 shadow-sm group-hover:shadow-card-hover group-hover:-translate-y-0.5 transition-all duration-300">
+                {p.image_url ? (
+                  <img
+                    src={p.image_url}
+                    alt={p.nom}
+                    loading="lazy"
+                    decoding="async"
+                    width="400"
+                    height="400"
+                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 img-optimizable"
+                    onerror="this.parentElement.classList.add('image-fallback')"
+                    onload="this.parentElement.classList.remove('image-fallback'); this.classList.add('loaded')"
+                  />
+                ) : (
+                  <div class="absolute inset-0 bg-gradient-to-br from-white via-neutral-100 to-[#EEEAE0] flex flex-col items-center justify-center p-4 text-center">
+                    <img
+                      src="/logos/favicon-marchedemo.png"
+                      alt=""
+                      aria-hidden="true"
+                      width="48"
+                      height="48"
+                      class="w-10 h-10 md:w-12 md:h-12 opacity-15 mb-2"
+                      loading="lazy"
+                    />
+                    <p class="font-soft font-bold text-[11px] md:text-[12px] leading-tight text-neutral-500 uppercase tracking-wider line-clamp-3">
+                      {p.nom}
+                    </p>
+                    <span class="mt-2 text-[9.5px] text-neutral-500 italic">Photo à venir</span>
+                  </div>
+                )}
+                {p.origine && (
+                  <span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur text-[10.5px] font-bold text-noir shadow-sm">
+                    {p.origine}
+                  </span>
+                )}
+              </div>
+              <div class="mt-3 px-0.5">
+                <p class="font-soft font-bold text-[13.5px] md:text-[14px] leading-tight text-noir line-clamp-2 min-h-[2.4em]">
+                  {p.nom}
+                </p>
+                <p class="text-[11.5px] text-neutral-500 mt-1 leading-snug">
+                  {p.unite && <span class="font-bold text-neutral-700">{p.unite}</span>}
+                  {p.unite && p.description && <span> · </span>}
+                  {p.description && <span class="line-clamp-1">{p.description}</span>}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state for level 2/3 leaves with no produits.
+          `needsProducts` encapsulates "level 2 leaf OR level 3" — both cases
+          where we actually queried the DB for products.
+          When the parent rayon has products, we promote them as
+          "À découvrir dans le même rayon" so the page is never a dead end. */}
+      {needsProducts && produits.length === 0 && (
+        <div class="bg-white rounded-3xl ring-1 ring-black/5 shadow-card overflow-hidden reveal">
+          <div class={`grid ${suggestionsRayon.length > 0 ? "md:grid-cols-2" : "grid-cols-1"} gap-0`}>
+            {/* Left : message + CTAs */}
+            <div class="p-8 md:p-10 lg:p-12 flex flex-col justify-center">
+              <div class="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-vert/10 text-vert text-[12px] font-bold tracking-wide uppercase">
+                <span class="w-2 h-2 rounded-full bg-vert animate-pulse"></span>
+                Bientôt en ligne
+              </div>
+              <h2 class="mt-4 font-soft font-bold text-[24px] md:text-[28px] leading-tight text-noir">
+                Notre rayon <span class="text-vert">{subLabel ?? catLabel}</span> arrive bientôt sur le site.
+              </h2>
+              <p class="mt-3 text-[15px] text-neutral-600 leading-relaxed max-w-md">
+                Ces produits sont déjà <strong>présents en magasin</strong> à Toulouse Sud — Cépière. On finit de les cataloguer en ligne.
+              </p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <a href={`/rayons/${rayonSlug}`} class="btn rayon-btn-primary btn-sheen">
+                  Explorer le rayon {rayon.nomCourt}
+                </a>
+                <a href="/magasins" class="btn rayon-btn-ghost btn-sheen">
+                  Voir le magasin
+                </a>
+              </div>
+            </div>
+
+            {/* Right : 6 popular products from the same rayon */}
+            {suggestionsRayon.length > 0 && (
+              <div class="bg-gradient-to-br from-white via-neutral-100 to-[#EEEAE0] p-6 md:p-8">
+                <p class="font-soft font-bold text-[14px] text-noir mb-4">
+                  À découvrir dans le rayon {rayon.nomCourt} :
+                </p>
+                <div class="grid grid-cols-3 gap-3">
+                  {suggestionsRayon.map((p) => (
+                    <a
+                      href={`/produits/${p.slug}`}
+                      class="group block bg-white rounded-xl overflow-hidden ring-1 ring-black/5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+                      title={p.nom}
+                    >
+                      <div class="aspect-square relative overflow-hidden">
+                        {p.image_url ? (
+                          <img
+                            src={p.image_url}
+                            alt={p.nom}
+                            loading="lazy"
+                            decoding="async"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div class="absolute inset-0 bg-gradient-to-br from-white to-neutral-100"></div>
+                        )}
+                      </div>
+                      <p class="px-2 py-1.5 text-[11px] font-pro font-medium text-neutral-700 line-clamp-2 leading-tight min-h-[34px]">
+                        {p.nom}
+                      </p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- VIDEOS : uniquement sur level 1 pour ne pas alourdir -->
+  {level === 1 && videos.length > 0 && (
+    <>
+      {videoCulture && <div class="culture-divider" data-culture={videoCulture} />}
+      <section class="section bg-white" data-culture={videoCulture}>
+        <div class="container-mo">
+          <span class="eyebrow reveal">En vidéo</span>
+          <h2 class="display-md mt-4 max-w-2xl text-balance reveal" data-watermark={videoCultureLabel}>Découvrez le rayon en images.</h2>
+
+          <div class="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl" data-reveal-stagger>
+            {videos.map((v) => {
+              return (
+                <div class="reveal">
+                  <LocalVideoPlayer
+                    client:visible
+                    src={v.data.src_local}
+                    title={v.data.titre}
+                    href={v.data.url_tiktok}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </>
+  )}
+
+  <!-- RECETTES : cross-link produits → cuisine, level 1 only -->
+  {level === 1 && recettesRayon.length > 0 && (
+    <>
+      {recetteCulture && <div class="culture-divider" data-culture={recetteCulture} />}
+      <section
+        class:list={["section bg-blanc", !recetteCulture && "border-t border-black/5"]}
+        data-culture={recetteCulture}
+      >
+        <div class="container-mo">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div class="max-w-2xl">
+              <span class="eyebrow reveal">Cuisine du rayon</span>
+              <h2 class="display-md mt-4 text-balance reveal" data-watermark={recetteCultureLabel}>
+                <span class:list={[!recetteCulture && "text-vert"]}>Que cuisiner</span> avec les produits du rayon {rayon.nomCourt} ?
+              </h2>
+              <p class="mt-3 text-[15px] text-neutral-600 reveal">
+                Recettes authentiques qui utilisent les ingrédients de ce rayon.
+                Tous les produits sont disponibles dans notre magasin à Toulouse Sud — Cépière.
+              </p>
+            </div>
+            <a href="/recettes" class="btn btn-secondary shrink-0 btn-sheen">
+              Toutes les recettes
+            </a>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+            {recettesRayon.map((r, i) => (
+              <div class="reveal reveal-scale" style={`--reveal-delay: ${i * 80}ms`}>
+                <RecetteCard recette={r} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  )}
+
+  <!-- AUTRES RAYONS : uniquement sur level 1 pour garder l'UX focus -->
+  {level === 1 && (
+    <section class="section bg-white border-t border-black/5">
+      <div class="container-mo">
+        <span class="eyebrow reveal">Continuer l'exploration</span>
+        <h2 class="display-md mt-4 max-w-2xl text-balance reveal">Autres rayons à découvrir.</h2>
+
+        <div class="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
+          {otherRayons.map((r) => (
+            <a
+              href={`/rayons/${r.slug}`}
+              class="reveal group relative rounded-2xl overflow-hidden aspect-[4/5] bg-noir card-float"
+            >
+              <img
+                src={r.image}
+                alt={r.imageAlt}
+                loading="lazy"
+                class="absolute inset-0 w-full h-full object-cover opacity-75 group-hover:opacity-90 group-hover:scale-[1.06] transition-all duration-500"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+              <div class="absolute inset-x-0 bottom-0 p-4 md:p-5">
+                <h3 class="font-soft font-bold text-white text-[16px] md:text-[20px] leading-tight">
+                  {r.nomCourt}
+                </h3>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {level === 1 && (
+    <>
+      <NewsletterInline />
+      <FAQAccordion items={faqItems} title={`FAQ — ${rayon.nomCourt}`} />
+    </>
+  )}
+</Layout>
+
+<style>
+  /* Variante compact pour le hero sur les niveaux 2 et 3 */
+  .rayon-hero--compact .rayon-title {
+    font-size: clamp(28px, 5vw, 40px);
+  }
+  .rayon-hero--compact {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  /* ============================================================
+     Hero section-BG cultural DA — boss's directive : "tu doit
+     copier la disgin / suivre la même DA".
+     ------------------------------------------------------------
+     Activated on level-1 cultural rayons :
+       saveurs-asie (asie ⇄ inde) · saveurs-afrique (∅ ⇄ créole)
+       saveur-mediterranee (maghreb ⇄ italie)
+       epices-du-monde (maghreb ⇄ inde)
+       produits-courants (∅ ⇄ hygiène)
+
+     The hero <section> already has its rayon-palette background
+     and .rayon-motif overlay. We add two layers between them :
+       1. .rayon-hero-bg__slides : crossfading banner artwork,
+          object-fit: cover so the rotated culture word + central
+          illustration zones fill the hero's visible band.
+       2. .rayon-hero-bg__overlay : palette-tinted gradient that
+          fades from solid (left, where text lives) to transparent
+          (right, where the photo card overlays anyway), keeping
+          contrast on the headline without burying the artwork.
+
+     The right-side 4:5 photo slideshow stays UNTOUCHED — it sits
+     in the foreground at z-10 alongside the title.
+     ============================================================ */
+  .rayon-hero-bg {
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .rayon-hero-bg__slides,
+  .rayon-hero-bg__slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .rayon-hero-bg__slide {
+    will-change: opacity;
+    overflow: hidden;
+  }
+
+  /* Empty placeholder slide — used on single-banner rayons (saveurs-
+     afrique, produits-courants). Fully transparent so the rayon
+     palette + .rayon-motif underneath stay visible during this
+     slide's window in the cycle, alternating with the cultural DA. */
+  .rayon-hero-bg__slide--empty {
+    background: transparent;
+  }
+
+  /* Decorative motif layer — each culture sets its own SVG pattern
+     via background-image below. Sits between the palette base and
+     the rotated culture word. */
+  .rayon-hero-bg__motif {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  /* Massive rotated culture word — the typographic centrepiece of
+     every banner. Centred on the slide, rotated -90deg so it reads
+     bottom-up like the registry artwork. Sized to dominate the
+     hero band visually without overlapping the title text on the
+     left (overflow-hidden on the slide clips long words like
+     "MAGHREB" gracefully). */
+  .rayon-hero-bg__word {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    margin: 0 auto;
+    width: max-content;
+    font-family: 'Mulish', system-ui, -apple-system, sans-serif;
+    font-weight: 900;
+    font-size: clamp(180px, 32vh, 360px);
+    letter-spacing: -0.04em;
+    line-height: 0.82;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
+  }
+
+  /* Bottom-anchored fade — every banner has a subtle darker zone at
+     the foot where the cultural illustration sits. We approximate
+     that depth cue with a transparent-to-shadow gradient so the
+     section feels grounded even without the bespoke artwork. */
+  .rayon-hero-bg__slide--banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent 60%,
+      rgba(0, 0, 0, 0.18) 100%
+    );
+  }
+
+  /* ============================================================
+     Per-culture DA — algorithmic reproduction of each banner.
+     Palette + motif + word colour, all in pure CSS. The cultural
+     illustration scenes (camel, ramen, dahl, Colosseum, drum,
+     soap kit) are bespoke artwork and stay out of scope here.
+     ============================================================ */
+
+  /* Asie : cream / beige base, bamboo silhouette descending from
+     the top-right corner, dark "ASIE" word.
+     Source banner : /images/banners/asie.jpg */
+  .rayon-hero-bg__slide[data-culture="asie"] {
+    background:
+      radial-gradient(ellipse at 20% 0%, #F6EDD1 0%, transparent 60%),
+      linear-gradient(180deg, #F1E7C6 0%, #E2D1A2 100%);
+  }
+  .rayon-hero-bg__slide[data-culture="asie"] .rayon-hero-bg__motif {
+    background-position: top right;
+    background-size: 55% auto;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><g fill='%23355E33' fill-opacity='0.55'><path d='M380 0 Q360 60 340 120 T300 260 T240 380' stroke='%23355E33' stroke-width='2' fill='none'/><ellipse cx='350' cy='40' rx='52' ry='6' transform='rotate(-32 350 40)'/><ellipse cx='320' cy='110' rx='62' ry='7' transform='rotate(-46 320 110)'/><ellipse cx='285' cy='185' rx='58' ry='6' transform='rotate(-52 285 185)'/><ellipse cx='250' cy='265' rx='66' ry='7' transform='rotate(-56 250 265)'/><ellipse cx='220' cy='340' rx='54' ry='6' transform='rotate(-60 220 340)'/></g></svg>");
+  }
+  .rayon-hero-bg__slide[data-culture="asie"] .rayon-hero-bg__word {
+    color: #1A1A1A;
+    opacity: 0.32;
+  }
+
+  /* Inde : deep maroon base, mandala lattice, white "INDE" word.
+     Source banner : /images/banners/inde.jpg */
+  .rayon-hero-bg__slide[data-culture="inde"] {
+    background:
+      radial-gradient(ellipse at 30% 50%, #6A1F1F 0%, #3D0F0F 80%);
+  }
+  .rayon-hero-bg__slide[data-culture="inde"] .rayon-hero-bg__motif {
+    background-position: center;
+    background-size: 280px 280px;
+    background-repeat: repeat;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g transform='translate(100 100)' fill='none' stroke='%23E8C4A2' stroke-width='1.2' stroke-opacity='0.55'><circle r='14'/><circle r='32'/><circle r='52'/><circle r='72'/><circle r='90'/><g><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/><path d='M0 -72 L6 -42 L0 -28 L-6 -42 Z' fill='%23E8C4A2' fill-opacity='0.25' stroke='none'/></g><g transform='rotate(30)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(60)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(90)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(120)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(150)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(180)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(210)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(240)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(270)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(300)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g><g transform='rotate(330)'><path d='M0 -90 L8 -52 L0 -32 L-8 -52 Z'/></g></g></svg>");
+    opacity: 0.42;
+  }
+  .rayon-hero-bg__slide[data-culture="inde"] .rayon-hero-bg__word {
+    color: #FFFFFF;
+    opacity: 0.32;
+  }
+
+  /* Italie : tricolore vertical stripes, black "ITALIE" word
+     anchored on the white middle stripe.
+     Source banner : /images/banners/italie.jpg */
+  .rayon-hero-bg__slide[data-culture="italie"] {
+    background: linear-gradient(
+      90deg,
+      #009246 0%, #009246 33.33%,
+      #F4F1E9 33.33%, #F4F1E9 66.66%,
+      #CE2B37 66.66%, #CE2B37 100%
+    );
+  }
+  .rayon-hero-bg__slide[data-culture="italie"] .rayon-hero-bg__motif {
+    /* Italy silhouette echo — abstract boot outline rendered as a
+       low-opacity stroke spanning the central white stripe. */
+    background-position: center;
+    background-size: 30% auto;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 320'><g fill='none' stroke='%23B4986A' stroke-width='2.5' stroke-opacity='0.45'><path d='M70 30 Q90 60 105 95 T125 175 Q130 215 110 245 T70 290 Q55 305 65 270 Q80 240 75 205 T55 165 Q40 135 50 110 T70 30 Z'/></g></svg>");
+  }
+  .rayon-hero-bg__slide[data-culture="italie"] .rayon-hero-bg__word {
+    color: #1A1A1A;
+    opacity: 0.45;
+  }
+
+  /* Maghreb : warm coral / terracotta base with subtle desert sun
+     glow at upper-left, white "MAGHREB" word.
+     Source banner : /images/banners/maghreb.jpg */
+  .rayon-hero-bg__slide[data-culture="maghreb"] {
+    background:
+      radial-gradient(circle at 18% 30%, rgba(255, 220, 170, 0.4) 0%, transparent 45%),
+      linear-gradient(180deg, #E07050 0%, #B95838 100%);
+  }
+  .rayon-hero-bg__slide[data-culture="maghreb"] .rayon-hero-bg__motif {
+    /* Dune silhouette anchored to the bottom edge — abstract two-
+       layered horizon line in muted brown. */
+    background-position: bottom;
+    background-size: 100% 35%;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200' preserveAspectRatio='none'><path d='M0 200 L0 130 Q100 95 220 110 T420 100 T600 120 L600 200 Z' fill='%23722F18' fill-opacity='0.45'/><path d='M0 200 L0 160 Q150 140 300 150 T600 155 L600 200 Z' fill='%23541F0E' fill-opacity='0.55'/></svg>");
+  }
+  .rayon-hero-bg__slide[data-culture="maghreb"] .rayon-hero-bg__word {
+    color: #FFFFFF;
+    opacity: 0.32;
+  }
+
+  /* Créole : sky-to-sand vertical gradient evoking a Caribbean
+     beach horizon, white "CRÉOLE" word.
+     Source banner : /images/banners/creole.jpg */
+  .rayon-hero-bg__slide[data-culture="creole"] {
+    background: linear-gradient(
+      180deg,
+      #5DA0C9 0%,
+      #9CBCC3 45%,
+      #C7B68F 70%,
+      #DEC598 100%
+    );
+  }
+  .rayon-hero-bg__slide[data-culture="creole"] .rayon-hero-bg__motif {
+    /* Sun disc + palm hint — the source banner has a sun and palm
+       leaves, we approximate with a soft solar disc and a stylised
+       palm-frond silhouette anchored to the bottom-left. */
+    background-position: bottom left;
+    background-size: 60% 70%;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'><circle cx='320' cy='80' r='38' fill='%23F6E5B4' fill-opacity='0.55'/><g fill='%231F4A2B' fill-opacity='0.45'><path d='M40 280 Q60 220 30 170 Q70 200 90 250 Z'/><path d='M40 280 Q90 240 130 200 Q90 250 80 280 Z'/><path d='M40 280 Q20 240 0 220 Q20 260 30 280 Z'/></g></svg>");
+  }
+  .rayon-hero-bg__slide[data-culture="creole"] .rayon-hero-bg__word {
+    color: #FFFFFF;
+    opacity: 0.32;
+  }
+
+  /* Hygiène : pastel pink base with bubble texture, dark "HYGIÈNE"
+     word.
+     Source banner : /images/banners/hygiene.jpg */
+  .rayon-hero-bg__slide[data-culture="hygiene"] {
+    background: linear-gradient(180deg, #F4D7DD 0%, #E0BCC3 100%);
+  }
+  .rayon-hero-bg__slide[data-culture="hygiene"] .rayon-hero-bg__motif {
+    background-size: 220px 220px;
+    background-repeat: repeat;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g fill='none' stroke='%23E89AAF' stroke-width='1.4' stroke-opacity='0.45'><circle cx='40' cy='50' r='14'/><circle cx='110' cy='70' r='9'/><circle cx='160' cy='40' r='17'/><circle cx='70' cy='130' r='12'/><circle cx='150' cy='150' r='20'/><circle cx='30' cy='170' r='8'/></g></svg>");
+    opacity: 0.85;
+  }
+  .rayon-hero-bg__slide[data-culture="hygiene"] .rayon-hero-bg__word {
+    color: #1A1A1A;
+    opacity: 0.36;
+  }
+
+  /* Sauces & Soupes : warm orange-peach linear gradient, soup bowl repeating motif, dark word */
+  .rayon-hero-bg__slide[data-culture="sauces-soupes"] {
+    background: linear-gradient(180deg, #F4C7B5 0%, #FFE8DC 100%);
+  }
+  .rayon-hero-bg__slide[data-culture="sauces-soupes"] .rayon-hero-bg__motif {
+    background-size: 240px 240px;
+    background-repeat: repeat;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g fill='none' stroke='%23A85710' stroke-width='1.4' stroke-opacity='0.4'><circle cx='50' cy='60' r='20'/><path d='M30 60 L70 60'/><circle cx='150' cy='60' r='20'/><path d='M130 60 L170 60'/><circle cx='100' cy='150' r='20'/><path d='M80 150 L120 150'/></g></svg>");
+    opacity: 0.75;
+  }
+  .rayon-hero-bg__slide[data-culture="sauces-soupes"] .rayon-hero-bg__word {
+    color: #1A1A1A;
+    opacity: 0.3;
+  }
+
+  /* Huiles & Condiments : fresh green linear gradient, olive branch/drop repeating motif, light word */
+  .rayon-hero-bg__slide[data-culture="huiles-condiments"] {
+    background: linear-gradient(180deg, #A8D85F 0%, #7BC141 100%);
+  }
+  .rayon-hero-bg__slide[data-culture="huiles-condiments"] .rayon-hero-bg__motif {
+    background-size: 200px 200px;
+    background-repeat: repeat;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g fill='none' stroke='%232E8B4A' stroke-width='1.4' stroke-opacity='0.4'><path d='M40 80 Q60 50 80 80 T120 80'/><circle cx='80' cy='65' r='5' fill='%232E8B4A' fill-opacity='0.3'/><path d='M140 140 Q160 110 180 140 T220 140'/><circle cx='180' cy='125' r='5' fill='%232E8B4A' fill-opacity='0.3'/></g></svg>");
+    opacity: 0.75;
+  }
+  .rayon-hero-bg__slide[data-culture="huiles-condiments"] .rayon-hero-bg__word {
+    color: #FFFFFF;
+    opacity: 0.3;
+  }
+
+  /* ============================================================
+     Foreground contrast overlay — keeps the hero title legible on
+     every slide regardless of palette. Strong palette tint on the
+     left where the title lives, fading to transparent on the right
+     where the photo card overlays anyway. The tint colour uses
+     the active rayon's --culture-from / --culture-to tokens (set
+     once on the wrapper from heroBgPrimaryBanner) so the overlay
+     stays harmonised with the rotation.
+     ============================================================ */
+  .rayon-hero-bg__overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        100deg,
+        color-mix(in srgb, var(--culture-from, #1C6B35) 60%, transparent) 0%,
+        color-mix(in srgb, var(--culture-from, #1C6B35) 35%, transparent) 35%,
+        transparent 65%,
+        transparent 100%
+      );
+  }
+
+  /* Tablet & mobile — the hero stacks vertically. Soften the
+     overlay to a neutral top-down tint so the cultural artwork
+     stays prominent behind the stacked content. */
+  @media (max-width: 1023px) {
+    .rayon-hero-bg__overlay {
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--culture-from, #1C6B35) 50%, transparent) 0%,
+          color-mix(in srgb, var(--culture-from, #1C6B35) 28%, transparent) 60%,
+          transparent 100%
+        );
+    }
+    .rayon-hero-bg__word {
+      font-size: clamp(140px, 28vh, 260px);
+    }
+  }
+</style>

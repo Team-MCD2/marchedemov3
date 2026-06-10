@@ -1,0 +1,81 @@
+---
+/**
+ * LocalVideoPlayer — vanilla JS alternative to avoid React hydration issues.
+ */
+interface Props {
+  src: string;
+  title: string;
+  href?: string;
+}
+
+const { src, title, href } = Astro.props;
+const isMp4 = src && src.endsWith(".mp4");
+const uniqueId = `video-${Math.random().toString(36).substring(2, 9)}`;
+---
+
+<div class="video-player-container relative aspect-[9/16] rounded-3xl overflow-hidden bg-noir ring-1 ring-white/10 w-full" id={uniqueId}>
+  {src && (
+    <video
+      class="video-el absolute inset-0 w-full h-full object-cover"
+      playsinline
+      muted
+      autoplay
+      loop
+      preload="metadata"
+    >
+      <source src={src} type={isMp4 ? "video/mp4" : undefined} />
+    </video>
+  )}
+
+  <button
+    type="button"
+    class="mute-btn absolute top-3.5 right-3.5 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur text-white text-[12px] font-pro font-bold tracking-wide hover:bg-black/70 transition-colors"
+    aria-label={`Muter/Démuter : ${title}`}
+  >
+    <span class="btn-text">Son Off</span>
+  </button>
+
+  <div class="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 via-black/20 to-transparent pointer-events-none" />
+  <div class="absolute inset-x-0 bottom-0 p-4 text-white pointer-events-none">
+    <p class="font-soft font-bold text-[15px] leading-tight line-clamp-2">{title}</p>
+  </div>
+
+  <!-- Fallback card if video fails -->
+  <div class="fallback-card absolute inset-0 hidden flex flex-col items-center justify-center bg-noir text-white/90 p-6 text-center gap-3">
+    <p class="font-soft font-bold text-lg">{title}</p>
+    {href && <a href={href} target="_blank" rel="noopener noreferrer" class="text-white/60 text-xs underline">Voir la vidéo sur TikTok ↗</a>}
+  </div>
+</div>
+
+<script define:vars={{ uniqueId, href }}>
+  const container = document.getElementById(uniqueId);
+  if (container) {
+    const video = container.querySelector(".video-el");
+    const muteBtn = container.querySelector(".mute-btn");
+    const btnText = container.querySelector(".btn-text");
+    const fallbackCard = container.querySelector(".fallback-card");
+
+    if (video) {
+      video.addEventListener("error", () => {
+        video.classList.add("hidden");
+        muteBtn.classList.add("hidden");
+        fallbackCard.classList.remove("hidden");
+      });
+
+      if (muteBtn && btnText) {
+        muteBtn.addEventListener("click", () => {
+          const isMuted = video.muted;
+          video.muted = !isMuted;
+          if (video.muted) {
+            btnText.textContent = "Son Off";
+          } else {
+            btnText.textContent = "Son On";
+            video.play().catch(() => {});
+          }
+        });
+      }
+    } else {
+      fallbackCard.classList.remove("hidden");
+    }
+  }
+</script>

@@ -1,0 +1,9 @@
+---
+import { configV3 } from "@/lib/config-v3";
+import ProduitCardV2 from "./ProduitCardV2.astro";
+import ProduitCardV3 from "./ProduitCardV3.astro";
+
+const props = Astro.props;
+---
+
+{configV3.isV3Active ? <ProduitCardV3 {...props} /> : <ProduitCardV2 {...props} />}

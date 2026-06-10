@@ -1,0 +1,1123 @@
+---
+/**
+ * Header — sticky, identical across every page.
+ * - Non-scrolled state: 
+ *   - Row 1 (above logo): Burger, Search Bar, Promos & Magasins.
+ *   - Row 2: Large Centered Logo with a custom ethnic wave background.
+ *   - Row 3: Centered Category Buttons.
+ * - Scrolled state:
+ *   - Row 1 stays sticky.
+ *   - Row 2 (Logo) collapses smoothly.
+ *   - Row 3 (Categories) becomes sticky, categories align to the left and auxiliary links slide down to the same line on the right.
+ * - Category buttons have solid deep colored backgrounds, white text, and correct padding (no text wrapping).
+ */
+import { RAYONS_LIST } from "@/lib/site";
+import { DEFAULT_STORE } from "@/lib/geo";
+
+const pathname = Astro.url.pathname;
+const isHome = pathname === "/";
+const isActive = (href: string) =>
+  href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+/* Use the default store on SSR / prerender — see Layout.astro for the
+ * full rationale (avoids the Astro.request.headers warning chain).
+ * Store-aware text is patched at runtime by enhanceStoreFromCookie. */
+const currentStore = DEFAULT_STORE;
+
+// Deep, rich shades matching each rayon for button backgrounds (ensures text-white is fully legible)
+const BUTTON_COLORS: Record<string, string> = {
+  "boucherie-halal": "#8B1919",     // Bordeaux
+  "fruits-legumes": "#2E8B4A",      // Vert Primeur
+  "epices-du-monde": "#A86B1E",     // Or profond
+  "saveurs-afrique": "#A85710",     // Orange profond
+  "saveurs-asie": "#A82F24",        // Rouge Asie
+  "saveur-mediterranee": "#1E5A8F", // Bleu Méditerranée
+  "saveurs-sud-amer": "#D97706",    // Ambre
+  "balkans-turques": "#047857",     // Emeraude
+  "produits-courants": "#4B5563",   // Gris
+  "surgeles": "#0284C7",            // Bleu clair
+  "boulangerie": "#B45309",         // Marron doré
+  "produits-laitiers": "#2563EB",   // Bleu roi
+};
+
+const TWEMOJI_IDS: Record<string, string> = {
+  "boucherie-halal": "1f969",
+  "fruits-legumes": "1f349",
+  "epices-du-monde": "1f336",
+  "saveurs-afrique": "1f30d",
+  "saveurs-asie": "1f35c",
+  "saveur-mediterranee": "1fad2",
+  "saveurs-sud-amer": "1f33d",
+  "balkans-turques": "1f9c0",
+  "produits-courants": "1f6d2",
+  "surgeles": "2744",
+  "boulangerie": "1f956",
+  "produits-laitiers": "1f95b",
+};
+---
+
+<header
+  id="site-header"
+  class={`sticky lg:fixed top-0 left-0 z-[60] w-full border-b border-black/5 bg-white/95 backdrop-blur-sm transition-[box-shadow] duration-200 ${!isHome ? "is-header-scrolled header-scrolled" : ""}`}
+>
+  <!-- 0. Row 0: Top bar discrete (Desktop only, slides up on scroll) -->
+  <div id="header-top-bar" class="header-top-bar border-b border-black/5 bg-white overflow-hidden hidden lg:block">
+    <div class="container-mo flex items-center justify-between py-2 text-[]-neutral-600 font-pro">
+      <span class="flex items-center gap-2">
+        Bienvenue chez <strong class="text-neutral-900 font-bold">Marché de Mo'</strong>
+        · Le plus grand supermarché ethnique d'Occitanie
+      </span>
+      <nav class="flex items-center gap-5">
+        <a href="/recettes" class="hover:text-vert font-bold text-neutral-600 transition-colors">Recettes</a>
+        <a href="/actualites" class="hover:text-vert font-bold text-neutral-600 transition-colors">Actualités</a>
+        <a href="/recrutement" class="hover:text-vert font-bold text-neutral-600 transition-colors">Recrutement</a>
+        <a href="/programme-fidelite" class="hover:text-vert font-bold text-neutral-600 transition-colors">Fidélité</a>
+        <span class="h-3 w-px bg-neutral-200"></span>
+        <a href="/notre-enseigne" class="hover:text-vert transition-colors">À propos</a>
+        <a href="/service-client" class="hover:text-vert transition-colors">Service client</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- 1. Row 1: Navigation Bar -->
+  <!-- Desktop Navigation Bar (Hidden on Mobile/Tablet) -->
+  <div id="header-row-1" class="border-b border-black/5 hidden lg:block bg-white relative z-20">
+    <div class="container-mo py-2 flex items-center justify-between gap-6">
+      <!-- Left: Logo & Burger Menu -->
+      <div class="flex items-center shrink-0">
+        <a
+          href="/"
+          class="flex items-center"
+          title="Retour à l'accueil"
+        >
+          <img
+            src="/logos/logo-marchedemo-rond-contourgreen.png"
+            alt="Marché de Mo'"
+            width="50"
+            height="50"
+            class="logo-row-1 w-[50px] h-[50px] object-contain shrink-0 bg-white rounded-full shadow-sm p-0.5 transition-all duration-300"
+          />
+          <div class="logo-row-1-label flex flex-col text-left font-soft shrink-0 ml-2.5 transition-all duration-200">
+            <span class="text-[16px] font-black text-vert-dark leading-none">Marché de Mo'</span>
+            <span class="text-[10px] font-bold text-neutral-600 mt-1 leading-none uppercase tracking-wider">Supermarché du Monde</span>
+          </div>
+        </a>
+        <button
+          id="burger-btn"
+          aria-label="Ouvrir le menu"
+          class="burger-btn ml-4 px-4 py-2.5 rounded-full hover:bg-neutral-100 transition text-neutral-800 flex items-center gap-2.5 border border-black/10 bg-white shadow-sm shrink-0"
+        >
+          <div class="burger-icon relative w-5 h-3.5 flex flex-col justify-between shrink-0">
+            <span class="bar bar-1 w-full h-[2px] bg-neutral-800 rounded transition-all duration-300"></span>
+            <span class="bar bar-2 w-full h-[2px] bg-neutral-800 rounded transition-all duration-300"></span>
+            <span class="bar bar-3 w-full h-[2px] bg-neutral-800 rounded transition-all duration-300"></span>
+          </div>
+          <span class="burger-text text-[13px] font-soft font-bold">Menu</span>
+        </button>
+      </div>
+
+      <!-- Center: Search Bar with Autocomplete Dropdown -->
+      <div class="flex-1 max-w-[620px] relative" id="desktop-search-container">
+        <form action="/recherche" method="get" class="w-full relative">
+          <input
+            id="desktop-search-input"
+            type="text"
+            name="q"
+            placeholder="Rechercher un produit, une saveur, une recette..."
+            class="w-full pl-12 pr-20 py-2 bg-neutral-100 focus:bg-white text-[14px] text-neutral-800 rounded-full border border-black/10 focus:border-vert/30 focus:ring-4 focus:ring-vert/5 outline-none transition-all placeholder-neutral-400"
+            autocomplete="off"
+          />
+          <svg class="w-5 h-5 text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" stroke-linecap="round" />
+          </svg>
+          <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-vert hover:bg-vert-dark text-white text-[12px] font-bold rounded-full transition-colors">
+            Valider
+          </button>
+        </form>
+        <!-- Desktop suggestions list dropdown -->
+        <div
+          id="desktop-search-suggestions"
+          class="absolute top-full left-0 right-0 mt-2 bg-white border border-black/10 rounded-3xl shadow-xl max-h-[480px] overflow-y-auto opacity-0 scale-95 pointer-events-none transition-all duration-200 z-50 p-4"
+        >
+        </div>
+      </div>
+
+      <!-- Right: Promos & Magasins -->
+      <div class="flex items-center gap-3 shrink-0">
+        <a
+          href="/promos"
+          class="inline-flex items-center hover:opacity-90 transition relative z-20 my-[-20px]"
+        >
+          <img src="/promos/promo_button-removebg-preview.png" alt="Promos" class="h-16 md:h-28 w-auto object-contain hover:scale-105 transition-transform duration-200" />
+        </a>
+        <a
+          href="/magasins/toulouse-sud"
+          class="px-4 py-2 border border-vert text-vert hover:bg-vert hover:text-white rounded-full font-soft font-bold text-[13px] flex items-center gap-1.5 transition hover:-translate-y-0.5"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Toulouse Sud — Ouvert 7j/7
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile/Tablet Layout — captivating 3-zone grid.
+       Left  : burger + big promo image
+       Center: BIG centered logo (the visual anchor)
+       Right : search + magasins (magasins flush to the edge)
+       Header is intentionally thick (96px) to let the logo & promo breathe.
+       No scroll-state transitions on mobile — the design stays as-is. -->
+  <div
+    id="header-row-mobile"
+    class="lg:hidden w-full h-[80px] border-b border-black/5 bg-white/95 backdrop-blur-sm grid grid-cols-[1fr_auto_1fr] items-center px-3 select-none relative z-20"
+  >
+    <!-- LEFT zone : burger + promo button (big) -->
+    <div class="flex items-center gap-2 justify-self-start min-w-0">
+      <!-- Burger Menu button -->
+      <button
+        id="burger-btn-mobile"
+        aria-label="Ouvrir le menu"
+        class="burger-btn w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-850 active:bg-neutral-200 transition-colors shrink-0"
+      >
+        <div class="burger-icon relative w-5 h-3.5 flex flex-col justify-between shrink-0">
+          <span class="bar bar-1 w-full h-[2px] bg-neutral-800 rounded transition-all duration-300"></span>
+          <span class="bar bar-2 w-full h-[2px] bg-neutral-800 rounded transition-all duration-300"></span>
+          <span class="bar bar-3 w-full h-[2px] bg-neutral-800 rounded transition-all duration-300"></span>
+        </div>
+      </button>
+
+      <!-- Promos button (big, captivating) -->
+      <a
+        href="/promos"
+        class="inline-flex items-center hover:opacity-90 active:scale-95 transition shrink-0"
+        aria-label="Voir les promos"
+      >
+        <img
+          src="/promos/promo_button-removebg-preview.png"
+          alt="Promos"
+          class="h-14 w-auto object-contain"
+        />
+      </a>
+    </div>
+
+    <!-- CENTER zone : big centered logo (visual anchor) -->
+    <a
+      href="/"
+      class="flex items-center justify-center justify-self-center"
+      title="Retour à l'accueil"
+    >
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Marché de Mo'"
+        width="58"
+        height="58"
+        fetchpriority="high"
+        class="logo-row-mobile w-[58px] h-[58px] object-contain bg-white rounded-full shadow-sm p-0.5"
+      />
+    </a>
+
+    <!-- RIGHT zone : search + location (location flush to the right edge) -->
+    <div class="flex items-center gap-2 justify-self-end min-w-0">
+      <!-- Search button -->
+      <button
+        id="mobile-search-trigger"
+        class="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-800 active:bg-neutral-200 transition-colors shrink-0"
+        title="Rechercher"
+        aria-label="Rechercher"
+      >
+        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+      </button>
+
+      <!-- Magasins (location) — closest to right border -->
+      <a
+        href="/magasins/toulouse-sud"
+        class="w-10 h-10 rounded-full border border-vert text-vert flex items-center justify-center transition active:bg-vert/10 shrink-0"
+        title="Toulouse Sud"
+        aria-label="Toulouse Sud"
+      >
+        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- 2. Row 2: Large Centered Logo with wave background (Desktop only) -->
+  <div 
+    id="header-logo-row" 
+    class="header-logo-row w-full flex flex-col items-center overflow-hidden hidden lg:flex"
+    style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
+  >
+    <a href="/" class="group flex flex-col items-center py-1">
+      <img
+        src="/logos/logo-marchedemo-rond-contourgreen.png"
+        alt="Marché de Mo'"
+        width="120"
+        height="120"
+        fetchpriority="high"
+        class="w-24 h-24 lg:w-30 lg:h-30 object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 bg-white rounded-full shadow-sm p-0.5"
+      />
+    </a>
+  </div>
+
+  <!-- 3. Row 3: Category Buttons & Auxiliary Links (Sticky below Row 1) -->
+  <div id="header-categories-row" class="border-t border-black/5 bg-neutral-50/80 py-1 relative z-10">
+    <div id="header-categories-flex" class="container-mo flex items-center gap-6 transition-all duration-300">
+      <!-- Scrollable category tabs bar (Centered by default in top state) -->
+      <div 
+        id="header-categories-container" 
+        class="overflow-x-auto whitespace-nowrap scrollbar-hide flex items-center gap-3 py-0.5 transition-all duration-300"
+      >
+        {RAYONS_LIST.slice(0, 6).map((r) => {
+          const bgCol = BUTTON_COLORS[r.slug] || BUTTON_COLORS["fruits-legumes"];
+          const twemojiId = TWEMOJI_IDS[r.slug];
+          return (
+            <a
+              href={`/rayons/${r.slug}`}
+              class="group/tab inline-flex items-center gap-2 px-[22px] py-[8px] rounded-full text-[14.5px] font-soft font-bold text-white transition-all shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[1px] hover:scale-[1.02] shrink-0"
+              style={`background-color: ${bgCol}; box-shadow: 0 4px 10px ${bgCol}25;`}
+            >
+              <span class="inline-flex items-center gap-2.5 whitespace-nowrap">
+                {twemojiId && (
+                  <img
+                    src={`https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/${twemojiId}.png`}
+                    alt=""
+                    class="w-[20px] h-[20px] object-contain shrink-0"
+                    loading="lazy"
+                  />
+                )}
+                {r.nomCourt}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+
+      <!-- Scrolled auxiliary links (slides/fades in on scroll on desktop) -->
+      <div
+        id="header-scrolled-links"
+        class="hidden items-center gap-5 text-[13.5px] font-soft font-bold text-neutral-500 font-pro shrink-0 transition-all duration-300 opacity-0 translate-x-5 pointer-events-none"
+      >
+        <a href="/actualites" class="hover:text-vert transition-colors">Actualités</a>
+        <a href="/franchise" class="hover:text-vert transition-colors text-vert-dark font-black">Franchise</a>
+        <a href="/programme-fidelite" class="hover:text-vert transition-colors">Fidélité</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile & Desktop Overlay Drawer (Position absolute to overlay the page content smoothly) -->
+  <div
+    id="mobile-drawer"
+    class="absolute top-full left-0 w-full bg-white border-b border-t border-black/10 shadow-2xl max-h-[85vh] overflow-y-auto z-45"
+  >
+    <nav class="container-mo py-6 space-y-1.5 font-pro font-semibold text-[15px]">
+      <!-- Highlighted Mobile Tagline Card Banner -->
+      <div class="p-4 bg-vert/5 border border-vert/10 rounded-2xl mb-4 text-left">
+        <span class="flex items-center gap-1.5 text-[11px] font-bold text-vert-dark uppercase tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-vert animate-pulse"></span>
+          Marché de Mo' · Supermarché
+        </span>
+        <h4 class="font-soft font-bold text-[15px] mt-1 text-neutral-900 leading-tight">
+          Le plus grand supermarché ethnique d'Occitanie
+        </h4>
+        <p class="text-[]-neutral-600 mt-1 leading-normal">
+          Plus de 20 000 références et 12 rayons thématiques à {currentStore.nomCourt.split(' — ')[0]}. Ouvert 7j/7.
+        </p>
+      </div>
+
+      <a href="/" class="block py-2.5 border-b border-black/5">Accueil</a>
+      <a href="/franchise" class="block py-2.5 border-b border-black/5 text-vert font-bold">Devenir franchisé</a>
+      <a href="/notre-enseigne" class="block py-2.5 border-b border-black/5">Notre enseigne</a>
+
+      <details class="border-b border-black/5">
+        <summary class="py-2.5 cursor-pointer flex justify-between items-center">
+          Nos rayons <span class="text-vert">+</span>
+        </summary>
+        <div class="pl-3 pb-2 space-y-1">
+          <a href="/rayons" class="block py-1.5 text-[14px] font-bold text-neutral-900">
+            Tous les rayons →
+          </a>
+          <a href="/produits" class="block py-1.5 text-[14px] font-bold text-vert">
+            Tous les produits →
+          </a>
+          <span class="block h-px bg-black/5 my-1"></span>
+          {RAYONS_LIST.map((r) => (
+            <a href={`/rayons/${r.slug}`} class="block py-1.5 text-[14px] font-normal text-neutral-700">
+              {r.nom}
+            </a>
+          ))}
+        </div>
+      </details>
+
+      <a href="/promos" class="block py-2.5 border-b border-black/5 text-rouge font-bold">Promos</a>
+      <a href="/magasins/toulouse-sud" class="block py-2.5 border-b border-black/5">Magasin (Toulouse Sud)</a>
+      <a href="/recettes" class="block py-2.5 border-b border-black/5">Recettes</a>
+      <a href="/recrutement" class="block py-2.5 border-b border-black/5">Recrutement</a>
+      <a href="/programme-fidelite" class="block py-2.5 border-b border-black/5">Programme fidélité</a>
+      <a href="/actualites" class="block py-2.5 border-b border-black/5">Actualités</a>
+      <a href="/service-client" class="block py-2.5 border-b border-black/5">Service client</a>
+
+      <div class="flex flex-col items-center justify-center pt-6 pb-2 border-t border-black/5 mt-4">
+        <img
+          src="/logos/logo-marchedemo-rond-contourgreen.png"
+          alt="Marché de Mo'"
+          width="70"
+          height="70"
+          class="w-[70px] h-[70px] object-contain bg-white rounded-full shadow-sm p-0.5"
+        />
+        <span class="text-[14px] font-black text-vert-dark mt-2">Marché de Mo'</span>
+        <span class="text-[10px] font-bold text-neutral-600 uppercase tracking-wider">Supermarché du Monde</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Full-screen Mobile Search Overlay -->
+  <div
+    id="mobile-search-overlay"
+    class="fixed inset-0 bg-white z-[60] backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex flex-col"
+  >
+    <!-- Overlay Header -->
+    <div class="container-mo py-4 flex items-center gap-4 border-b border-black/5">
+      <button
+        id="mobile-search-close"
+        class="p-2 rounded-full hover:bg-black/5 text-neutral-700 transition"
+        aria-label="Fermer la recherche"
+      >
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <div class="flex-1 relative">
+        <input
+          id="mobile-search-input"
+          type="text"
+          placeholder="Rechercher rayon, produit, recette..."
+          class="w-full pl-10 pr-4 py-2.5 bg-neutral-100 text-[15px] font-medium text-neutral-900 rounded-full border border-black/5 outline-none focus:bg-white focus:border-vert/30 transition-all placeholder-neutral-400"
+          autocomplete="off"
+        />
+        <svg class="w-5 h-5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" stroke-linecap="round" />
+        </svg>
+      </div>
+    </div>
+    <!-- Results list scrollable -->
+    <div class="flex-1 overflow-y-auto container-mo py-6 animate-pulse" id="mobile-search-results">
+      <div class="text-center py-10 text-neutral-500 text-[14px]">
+        <svg class="w-12 h-12 mx-auto mb-3 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" stroke-linecap="round" />
+        </svg>
+        Saisissez un mot pour rechercher...
+      </div>
+    </div>
+  </div>
+</header>
+<div id="header-spacer" class="hidden lg:block" style={`height: ${isHome ? '284px' : '120px'};`}></div>
+
+<style>
+  /* Hamburger button & icon animation */
+  .burger-btn {
+    position: relative;
+    cursor: pointer;
+  }
+  .burger-icon {
+    position: relative;
+    width: 20px;
+    height: 14px;
+  }
+  .burger-icon .bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: currentColor;
+    border-radius: 4px;
+    transform-origin: center center;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  }
+  .burger-icon .bar-1 {
+    top: 0px;
+  }
+  .burger-icon .bar-2 {
+    top: 6px;
+  }
+  .burger-icon .bar-3 {
+    top: 12px;
+  }
+
+  .burger-btn.is-active .bar-1 {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .burger-btn.is-active .bar-2 {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  .burger-btn.is-active .bar-3 {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  /* Mobile Drawer slide-down and fade-in transition */
+  #mobile-drawer {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-12px);
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+  }
+  #mobile-drawer.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  /* Native details element smooth expansion */
+  details[open] summary ~ * {
+    animation: sweep-details 0.25s ease-out;
+  }
+  @keyframes sweep-details {
+    0% { opacity: 0; transform: translateY(-4px) }
+    100% { opacity: 1; transform: translateY(0) }
+  }
+
+  /* Default categories alignment (Centered on desktop, left-aligned/scrollable on mobile) */
+  #header-categories-flex {
+    justify-content: center;
+  }
+  #header-categories-container {
+    justify-content: flex-start;
+    flex: 1;
+  }
+  #header-scrolled-links {
+    display: none !important;
+  }
+
+  /* Desktop header — expanded vs compact (instant switch, no in-between tweak) */
+  #header-top-bar,
+  #header-logo-row {
+    max-height: 9rem;
+    opacity: 1;
+    overflow: hidden;
+  }
+  #site-header.is-header-scrolled #header-top-bar,
+  #site-header.is-header-scrolled #header-logo-row {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    pointer-events: none;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* ---------------------------------------------------------------
+     Scrolled state — design rules
+     ---------------------------------------------------------------
+     Desktop & mobile share the SAME behaviour for visual consistency:
+       1. Burger STAYS visible (it's the only nav entry point).
+       2. The textual brand block beside the logo (logo-row-*-label) is
+          hidden — only logo + burger remain on the left.
+       3. The logo scales UP a notch so it stays the visual anchor.
+     This matches the user's request for parity between mobile and
+     desktop scrolled headers.
+     --------------------------------------------------------------- */
+  /* Desktop scrolled */
+  #site-header.is-header-scrolled .logo-row-1 {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  #site-header.is-header-scrolled .logo-row-1-label {
+    opacity: 0;
+    transform: translateX(-8px);
+    max-width: 0;
+    margin-left: 0;
+    pointer-events: none;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  /* Mobile scrolled — INTENTIONALLY no transitions.
+     The mobile header is captivating-by-default : big centered logo +
+     big promo on the left + actions on the right. We want that design
+     to STAY as the user scrolls, not collapse like the desktop one.
+     If you ever want to re-introduce a mobile scroll-collapse, scope
+     the rules to (max-width: 1023px) and target .logo-row-mobile. */
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(139, 25, 25, 0.4), 0 0 10px rgba(28, 107, 53, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 15px rgba(139, 25, 25, 0.8), 0 0 20px rgba(28, 107, 53, 0.5);
+    }
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s infinite ease-in-out;
+  }
+
+  @media (min-width: 1024px) {
+    #site-header.is-header-scrolled #header-categories-flex {
+      justify-content: space-between;
+    }
+    #site-header.is-header-scrolled #header-categories-container {
+      justify-content: flex-start;
+      flex: 1;
+    }
+    #site-header.is-header-scrolled #header-scrolled-links {
+      display: flex !important;
+      opacity: 1 !important;
+      transform: none !important;
+      pointer-events: auto !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    #header-categories-container {
+      justify-content: center;
+      flex: none;
+    }
+  }
+
+  /* Smooth transition for categories row collapse/expand */
+  #header-categories-row {
+    transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.25s ease,
+                padding 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                border-width 0.3s ease;
+    max-height: 100px; /* safe upper bound */
+    overflow: hidden;
+  }
+
+  /* Hide categories row dynamically when the mobile menu is open or on scroll down */
+  .menu-is-open #header-categories-row,
+  #site-header.hide-categories #header-categories-row {
+    max-height: 0px !important;
+    opacity: 0 !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    border-top-width: 0px !important;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* Ensure SVG stroke inherits parent color correctly and doesn't get overridden or hidden */
+  #site-header button svg,
+  #site-header a svg {
+    stroke: currentColor !important;
+  }
+</style>
+
+<script>
+  let searchIndex: any = null;
+  let isFetchingIndex = false;
+  let fuseProduits: any = null;
+  let fuseRayons: any = null;
+  let fuseRecettes: any = null;
+  let fuseActus: any = null;
+
+  const ensureSearchIndex = async () => {
+    if (searchIndex || isFetchingIndex) return;
+    isFetchingIndex = true;
+    try {
+      const res = await fetch("/api/search");
+      if (res.ok) {
+        searchIndex = await res.json();
+        const { default: Fuse } = await import("fuse.js");
+        
+        fuseProduits = new Fuse(searchIndex.produits, {
+          keys: ["title", "rayon", "origine", "badge"],
+          threshold: 0.35,
+          distance: 100,
+        });
+        fuseRayons = new Fuse(searchIndex.rayons, {
+          keys: ["title", "tagline"],
+          threshold: 0.35,
+        });
+        fuseRecettes = new Fuse(searchIndex.recettes, {
+          keys: ["title", "rayon"],
+          threshold: 0.35,
+        });
+        fuseActus = new Fuse(searchIndex.actus, {
+          keys: ["title", "categorie"],
+          threshold: 0.35,
+        });
+      }
+    } catch (err) {
+      console.error("Error loading search index:", err);
+    } finally {
+      isFetchingIndex = false;
+    }
+  };
+
+  const setupHeader = () => {
+    const burger = document.getElementById("burger-btn");
+    const burgerMobile = document.getElementById("burger-btn-mobile");
+    const drawer = document.getElementById("mobile-drawer");
+    const header = document.getElementById("site-header");
+    const scrolledLinks = document.getElementById("header-scrolled-links");
+    const row1 = document.getElementById("header-row-1");
+
+    // Search elements
+    const desktopSearchInput = document.getElementById("desktop-search-input") as HTMLInputElement | null;
+    const desktopSearchSuggestions = document.getElementById("desktop-search-suggestions") as HTMLElement | null;
+    const desktopSearchContainer = document.getElementById("desktop-search-container") as HTMLElement | null;
+    const mobileSearchTrigger = document.getElementById("mobile-search-trigger") as HTMLElement | null;
+    const mobileSearchClose = document.getElementById("mobile-search-close") as HTMLElement | null;
+    const mobileSearchInput = document.getElementById("mobile-search-input") as HTMLInputElement | null;
+    const mobileSearchOverlay = document.getElementById("mobile-search-overlay") as HTMLElement | null;
+    const mobileSearchResults = document.getElementById("mobile-search-results") as HTMLElement | null;
+
+    const updateDrawerPosition = () => {
+      if (!drawer || !header) return;
+      const activeRow = (window.innerWidth < 1024) ? document.getElementById("header-row-mobile") : document.getElementById("header-row-1");
+      if (!activeRow) return;
+      const rowRect = activeRow.getBoundingClientRect();
+      const headerRect = header.getBoundingClientRect();
+      const drawerTop = Math.max(0, rowRect.bottom - headerRect.top);
+      drawer.style.top = `${drawerTop}px`;
+    };
+
+    const toggleMenu = (e: MouseEvent) => {
+      e.stopPropagation();
+      const isOpen = drawer?.classList.toggle("is-open");
+      if (isOpen) {
+        burger?.classList.add("is-active");
+        burgerMobile?.classList.add("is-active");
+        header?.classList.add("menu-is-open");
+        updateDrawerPosition();
+      } else {
+        burger?.classList.remove("is-active");
+        burgerMobile?.classList.remove("is-active");
+        header?.classList.remove("menu-is-open");
+      }
+    };
+    
+    // Guard against duplicate listener binding
+    if (burger && !burger.dataset.listenerAttached) {
+      burger.dataset.listenerAttached = "true";
+      burger.addEventListener("click", toggleMenu as EventListener);
+    }
+
+    if (burgerMobile && !burgerMobile.dataset.listenerAttached) {
+      burgerMobile.dataset.listenerAttached = "true";
+      burgerMobile.addEventListener("click", toggleMenu as EventListener);
+    }
+
+    // Click outside to close drawer (Only bind once globally)
+    if (!(window as any).__clickOutsideBound) {
+      (window as any).__clickOutsideBound = true;
+      document.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (drawer && drawer.classList.contains("is-open")) {
+          const clickedInsideHeader = header?.contains(target);
+          if (!clickedInsideHeader) {
+            drawer.classList.remove("is-open");
+            burger?.classList.remove("is-active");
+            burgerMobile?.classList.remove("is-active");
+            header?.classList.remove("menu-is-open");
+          }
+        }
+      });
+    }
+
+    const showDesktopSuggestions = () => {
+      if (desktopSearchSuggestions) {
+        desktopSearchSuggestions.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+        desktopSearchSuggestions.classList.add("opacity-100", "scale-100", "pointer-events-auto");
+      }
+    };
+
+    const hideDesktopSuggestions = () => {
+      if (desktopSearchSuggestions) {
+        desktopSearchSuggestions.classList.add("opacity-0", "scale-95", "pointer-events-none");
+        desktopSearchSuggestions.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
+      }
+    };
+
+    const performSearch = (query: string, resultsContainer: HTMLElement, isMobile: boolean) => {
+      const trimmed = query.trim();
+      if (trimmed.length === 0) {
+        if (isMobile) {
+          resultsContainer.classList.add("animate-pulse");
+          resultsContainer.innerHTML = `
+            <div class="text-center py-10 text-neutral-500 text-[14px]">
+              <svg class="w-12 h-12 mx-auto mb-3 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" stroke-linecap="round" />
+              </svg>
+              Saisissez un mot pour rechercher...
+            </div>
+          `;
+        } else {
+          hideDesktopSuggestions();
+        }
+        return;
+      }
+
+      if (!isMobile) {
+        showDesktopSuggestions();
+      }
+
+      if (!searchIndex || !fuseProduits) {
+        resultsContainer.innerHTML = `
+          <div class="flex items-center justify-center py-10 text-neutral-500 gap-2">
+            <svg class="animate-spin h-5 w-5 text-vert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/>
+            </svg>
+            <span>Recherche en cours...</span>
+          </div>
+        `;
+        ensureSearchIndex().then(() => {
+          performSearch(query, resultsContainer, isMobile);
+        });
+        return;
+      }
+
+      const matchingProduits = fuseProduits.search(trimmed).slice(0, 6).map((r: any) => r.item);
+      const matchingRayons = fuseRayons.search(trimmed).slice(0, 4).map((r: any) => r.item);
+      const matchingRecettes = fuseRecettes.search(trimmed).slice(0, 4).map((r: any) => r.item);
+      const matchingActus = fuseActus.search(trimmed).slice(0, 4).map((r: any) => r.item);
+
+      const totalMatches = matchingProduits.length + matchingRayons.length + matchingRecettes.length + matchingActus.length;
+
+      resultsContainer.classList.remove("animate-pulse");
+
+      if (totalMatches === 0) {
+        resultsContainer.innerHTML = `
+          <div class="text-center py-10 text-neutral-500 text-[14.5px]">
+            <span class="text-[20px] mb-2 block">🔍</span>
+            Aucun résultat pour <strong class="text-neutral-700 font-bold">"${query}"</strong>
+            <p class="text-[]-neutral-600 mt-1 font-normal">Essayez d'autres mots-clés ou vérifiez l'orthographe.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<div class="space-y-5">`;
+
+      if (matchingRayons.length > 0) {
+        html += `
+          <div>
+            <div class="text-[11px] font-black text-neutral-600 uppercase tracking-widest px-2 mb-2">Rayons (${matchingRayons.length})</div>
+            <div class="grid grid-cols-1 gap-1">
+              ${matchingRayons.map((r: any) => `
+                <a href="${r.href}" class="flex items-center gap-3 p-2 rounded-2xl hover:bg-neutral-50 transition-colors group">
+                  <div class="w-10 h-10 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0">
+                    <img src="${r.image}" alt="${r.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[14px] font-bold text-neutral-900 group-hover:text-vert transition-colors truncate">${r.title}</div>
+                    <div class="text-[11px] text-neutral-600 truncate">${r.tagline}</div>
+                  </div>
+                  <svg class="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      if (matchingProduits.length > 0) {
+        html += `
+          <div>
+            <div class="text-[11px] font-black text-neutral-600 uppercase tracking-widest px-2 mb-2">Produits (${matchingProduits.length})</div>
+            <div class="grid grid-cols-1 gap-1">
+              ${matchingProduits.map((p: any) => `
+                <a href="${p.href}" class="flex items-center gap-3 p-2 rounded-2xl hover:bg-neutral-50 transition-colors group">
+                  <div class="w-10 h-10 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0">
+                    <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[14px] font-bold text-neutral-900 group-hover:text-vert transition-colors truncate">${p.title}</div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <span class="text-[11px] text-neutral-600 font-bold">${p.rayon}</span>
+                      ${p.origine ? `<span class="text-[10px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded-full font-medium">Origine: ${p.origine}</span>` : ""}
+                    </div>
+                  </div>
+                  ${p.badge ? `<span class="text-[10.5px] font-bold bg-rouge/10 text-rouge px-2.5 py-0.5 rounded-full">${p.badge}</span>` : ""}
+                  <svg class="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      if (matchingRecettes.length > 0) {
+        html += `
+          <div>
+            <div class="text-[11px] font-black text-neutral-600 uppercase tracking-widest px-2 mb-2">Recettes (${matchingRecettes.length})</div>
+            <div class="grid grid-cols-1 gap-1">
+              ${matchingRecettes.map((r: any) => `
+                <a href="${r.href}" class="flex items-center gap-3 p-2 rounded-2xl hover:bg-neutral-50 transition-colors group">
+                  <div class="w-8 h-8 rounded-lg bg-vert/10 text-vert flex items-center justify-center flex-shrink-0 text-[14px] font-bold">🍳</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[14px] font-bold text-neutral-900 group-hover:text-vert transition-colors truncate">${r.title}</div>
+                    <div class="text-[11px] text-neutral-600 truncate">Rayon ${r.rayon}</div>
+                  </div>
+                  <svg class="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      if (matchingActus.length > 0) {
+        html += `
+          <div>
+            <div class="text-[11px] font-black text-neutral-600 uppercase tracking-widest px-2 mb-2">Actualités (${matchingActus.length})</div>
+            <div class="grid grid-cols-1 gap-1">
+              ${matchingActus.map((a: any) => `
+                <a href="${a.href}" class="flex items-center gap-3 p-2 rounded-2xl hover:bg-neutral-50 transition-colors group">
+                  <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center flex-shrink-0 text-[14px] font-bold">📰</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[14px] font-bold text-neutral-900 group-hover:text-vert transition-colors truncate">${a.title}</div>
+                    <div class="text-[11px] text-neutral-600 truncate">${a.categorie}</div>
+                  </div>
+                  <svg class="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      resultsContainer.innerHTML = html;
+    };
+
+    // Mobile triggers
+    if (mobileSearchTrigger && mobileSearchOverlay && mobileSearchInput) {
+      if (!mobileSearchTrigger.dataset.listenerAttached) {
+        mobileSearchTrigger.dataset.listenerAttached = "true";
+        mobileSearchTrigger.addEventListener("click", () => {
+          mobileSearchOverlay.classList.remove("opacity-0", "pointer-events-none");
+          mobileSearchOverlay.classList.add("opacity-100", "pointer-events-auto");
+          setTimeout(() => mobileSearchInput.focus(), 150);
+          ensureSearchIndex();
+        });
+      }
+    }
+
+    if (mobileSearchClose && mobileSearchOverlay && mobileSearchInput && mobileSearchResults) {
+      if (!mobileSearchClose.dataset.listenerAttached) {
+        mobileSearchClose.dataset.listenerAttached = "true";
+        mobileSearchClose.addEventListener("click", () => {
+          mobileSearchOverlay.classList.add("opacity-0", "pointer-events-none");
+          mobileSearchOverlay.classList.remove("opacity-100", "pointer-events-auto");
+          mobileSearchInput.value = "";
+          mobileSearchResults.classList.add("animate-pulse");
+          mobileSearchResults.innerHTML = `
+            <div class="text-center py-10 text-neutral-500 text-[14px]">
+              <svg class="w-12 h-12 mx-auto mb-3 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" stroke-linecap="round" />
+              </svg>
+              Saisissez un mot pour rechercher...
+            </div>
+          `;
+        });
+      }
+    }
+
+    // Prefetch focus / hover
+    if (desktopSearchInput) {
+      if (!desktopSearchInput.dataset.focusListenerAttached) {
+        desktopSearchInput.dataset.focusListenerAttached = "true";
+        desktopSearchInput.addEventListener("focus", () => {
+          ensureSearchIndex();
+          if (desktopSearchInput.value.trim().length > 0) {
+            showDesktopSuggestions();
+          }
+        });
+        desktopSearchInput.addEventListener("mouseenter", () => {
+          ensureSearchIndex();
+        });
+      }
+    }
+
+    if (mobileSearchInput) {
+      if (!mobileSearchInput.dataset.focusListenerAttached) {
+        mobileSearchInput.dataset.focusListenerAttached = "true";
+        mobileSearchInput.addEventListener("focus", () => {
+          ensureSearchIndex();
+        });
+        mobileSearchInput.addEventListener("mouseenter", () => {
+          ensureSearchIndex();
+        });
+      }
+    }
+
+    // Input listeners
+    if (desktopSearchInput && desktopSearchSuggestions) {
+      if (!desktopSearchInput.dataset.inputListenerAttached) {
+        desktopSearchInput.dataset.inputListenerAttached = "true";
+        desktopSearchInput.addEventListener("input", (e) => {
+          const val = (e.target as HTMLInputElement).value;
+          performSearch(val, desktopSearchSuggestions, false);
+        });
+      }
+    }
+
+    if (mobileSearchInput && mobileSearchResults) {
+      if (!mobileSearchInput.dataset.inputListenerAttached) {
+        mobileSearchInput.dataset.inputListenerAttached = "true";
+        mobileSearchInput.addEventListener("input", (e) => {
+          const val = (e.target as HTMLInputElement).value;
+          performSearch(val, mobileSearchResults, true);
+        });
+      }
+    }
+
+    // Click outside to hide desktop suggestions
+    if (!(window as any).__clickOutsideSearchBound) {
+      (window as any).__clickOutsideSearchBound = true;
+      document.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (desktopSearchContainer && !desktopSearchContainer.contains(target)) {
+          hideDesktopSuggestions();
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          hideDesktopSuggestions();
+          if (mobileSearchOverlay && mobileSearchOverlay.classList.contains("opacity-100")) {
+            mobileSearchClose?.click();
+          }
+        }
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      if (drawer && drawer.classList.contains("is-open")) {
+        updateDrawerPosition();
+      }
+    }, { passive: true });
+  };
+
+  // Global ⌘K / Ctrl+K search shortcut (Bind exactly once globally)
+  if (!(window as any).__searchShortcutBound) {
+    (window as any).__searchShortcutBound = true;
+    window.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        if (window.location.pathname.startsWith("/recherche")) return;
+        e.preventDefault();
+        window.location.href = "/recherche";
+      }
+    });
+  }
+
+  const setupHeaderScroll = () => {
+    const SCROLL_DOWN = 120;
+    const SCROLL_UP = 60;
+
+    const evaluate = () => {
+      const header = document.getElementById("site-header");
+      if (!header) return;
+
+      const isHomePage = window.location.pathname === "/";
+      const y = window.scrollY;
+
+      if (isHomePage) {
+        const wasScrolled = header.classList.contains("is-header-scrolled");
+        if (!wasScrolled && y >= SCROLL_DOWN) {
+          header.classList.add("is-header-scrolled", "header-scrolled");
+        } else if (wasScrolled && y <= SCROLL_UP) {
+          header.classList.remove("is-header-scrolled", "header-scrolled");
+        }
+      } else {
+        if (!header.classList.contains("is-header-scrolled")) {
+          header.classList.add("is-header-scrolled", "header-scrolled");
+        }
+        
+        // Hide categories row when scrolling down, show when scrolling back to the top
+        const isHidden = header.classList.contains("hide-categories");
+        
+        if (!isHidden && y >= SCROLL_DOWN) {
+          header.classList.add("hide-categories");
+        } else if (isHidden && y <= SCROLL_UP) {
+          header.classList.remove("hide-categories");
+        }
+      }
+    };
+
+    // Remove the old scroll listener first if it exists
+    if ((window as any).__headerScrollEvaluate) {
+      window.removeEventListener("scroll", (window as any).__headerScrollEvaluate);
+    }
+
+    // Assign the new evaluate and add it on all pages
+    (window as any).__headerScrollEvaluate = evaluate;
+    window.addEventListener("scroll", (window as any).__headerScrollEvaluate, { passive: true });
+
+    const setSpacerHeight = () => {
+      const header = document.getElementById("site-header");
+      const spacer = document.getElementById("header-spacer");
+      if (!header || !spacer) return;
+
+      const isHomePage = window.location.pathname === "/";
+      
+      const hasScrolledClass = header.classList.contains("is-header-scrolled");
+      const hasScrolledClass2 = header.classList.contains("header-scrolled");
+      const hasHideCategories = header.classList.contains("hide-categories");
+
+      // Temporarily remove collapsed classes to measure natural expanded height
+      if (isHomePage) {
+        header.classList.remove("is-header-scrolled", "header-scrolled");
+      } else {
+        header.classList.add("is-header-scrolled", "header-scrolled");
+        header.classList.remove("hide-categories");
+      }
+
+      const naturalHeight = header.offsetHeight;
+
+      // Restore classes
+      if (hasScrolledClass) header.classList.add("is-header-scrolled");
+      if (hasScrolledClass2) header.classList.add("header-scrolled");
+      if (hasHideCategories) header.classList.add("hide-categories");
+
+      spacer.style.height = `${naturalHeight}px`;
+    };
+
+    // Measure and set spacer height
+    setSpacerHeight();
+
+    // Re-run on resize
+    window.addEventListener("resize", setSpacerHeight, { passive: true });
+
+    // Run evaluate immediately and multiple times to handle Astro scroll restoration
+    evaluate();
+    requestAnimationFrame(evaluate);
+    setTimeout(evaluate, 50);
+    setTimeout(evaluate, 150);
+    setTimeout(evaluate, 300);
+  };
+
+  const initHeader = () => {
+    setupHeader();
+    setupHeaderScroll();
+  };
+
+  document.addEventListener("astro:page-load", initHeader);
+  if (document.readyState !== "loading") initHeader();
+  else document.addEventListener("DOMContentLoaded", initHeader);
+</script>

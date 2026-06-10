@@ -1,0 +1,112 @@
+---
+/**
+ * FooterV3 — E.Leclerc-style clean footer.
+ * Organises info links into structured columns, renders payment icons,
+ * and maintains the mandatory Microdidact credit and brand logos.
+ */
+import PaymentIcons from "./PaymentIcons.astro";
+import { SITE } from "@/lib/site";
+import { DEFAULT_STORE } from "@/lib/geo";
+
+const store = DEFAULT_STORE;
+---
+
+<footer class="w-full bg-[color:var(--color-header-bg)] text-neutral-300 pt-12 pb-6 px-4 border-t border-neutral-800 transition-colors duration-300 font-pro">
+  <div class="max-w-[1536px] mx-auto space-y-10">
+    
+    <!-- 1. Top Newsletter & Socials Row -->
+    <div class="flex flex-col md:flex-row items-center justify-between pb-8 border-b border-neutral-800 gap-6">
+      <div class="text-center md:text-left">
+        <h4 class="font-soft font-bold text-[18px] text-white">Rejoignez la communauté Marché de Mo'</h4>
+        <p class="text-[13.5px] text-neutral-400 mt-1">Ne manquez aucune de nos offres exclusives hebdomadaires !</p>
+      </div>
+      
+      <!-- Quick Newsletter form -->
+      <form class="flex w-full max-w-[450px] relative" action="/api/newsletter" method="POST">
+        <input 
+          type="email" 
+          name="email" 
+          placeholder="Votre adresse email..." 
+          class="w-full pl-5 pr-28 py-3 bg-neutral-900 text-[14px] text-white rounded-full border border-neutral-800 outline-none focus:border-vert transition-all placeholder-neutral-500" 
+          required 
+        />
+        <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-vert hover:bg-vert-dark text-white font-bold text-[13.5px] px-5 py-2 rounded-full transition-colors">
+          S'inscrire
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. Main Link Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 py-4">
+      <!-- Col 1: Nos Services -->
+      <div class="space-y-3">
+        <h4 class="font-soft font-bold text-[14px] text-white uppercase tracking-wider">Nos Services</h4>
+        <ul class="space-y-2 text-[13.5px]">
+          <li><a href="/programme-fidelite" class="hover:text-vert-light transition-colors">Carte de Fidélité</a></li>
+          <li><a href="/recrutement" class="hover:text-vert-light transition-colors">Recrutement & Emploi</a></li>
+          <li><a href="/recettes" class="hover:text-vert-light transition-colors">Idées Recettes</a></li>
+          <li><a href="/actualites" class="hover:text-vert-light transition-colors">Actualités</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 2: Mon Magasin -->
+      <div class="space-y-3">
+        <h4 class="font-soft font-bold text-[14px] text-white uppercase tracking-wider">Mon Magasin</h4>
+        <p class="text-[13px] text-neutral-400 leading-relaxed">
+          <strong class="text-white font-bold block">{store.nomCourt}</strong>
+          5 rue Joachim du Bellay<br/>
+          31100 Toulouse
+        </p>
+        <p class="text-[12.5px] text-neutral-400">Tél : {store.telephone}</p>
+      </div>
+
+      <!-- Col 3: Informations Légales -->
+      <div class="space-y-3">
+        <h4 class="font-soft font-bold text-[14px] text-white uppercase tracking-wider">Légal & Infos</h4>
+        <ul class="space-y-2 text-[13.5px]">
+          <li><a href="/mentions-legales" class="hover:text-vert-light transition-colors">Mentions Légales</a></li>
+          <li><a href="/cgv" class="hover:text-vert-light transition-colors">Conditions Générales (CGV)</a></li>
+          <li><a href="/politique-de-cookies" class="hover:text-vert-light transition-colors">Politique de Cookies</a></li>
+          <li><a href="/donnees-personnelles" class="hover:text-vert-light transition-colors">Données Personnelles</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Marché de Mo' -->
+      <div class="space-y-3">
+        <h4 class="font-soft font-bold text-[14px] text-white uppercase tracking-wider">Marché de Mo'</h4>
+        <ul class="space-y-2 text-[13.5px]">
+          <li><a href="/notre-enseigne" class="hover:text-vert-light transition-colors">Notre Enseigne</a></li>
+          <li><a href="/franchise" class="hover:text-vert-light transition-colors text-vert font-bold">Devenir Franchisé</a></li>
+          <li><a href="/service-client" class="hover:text-vert-light transition-colors">Service Client</a></li>
+          <li><a href="mailto:contact@marchedemo.com" class="hover:text-vert-light transition-colors">Contact Pro</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 3. Bottom Payment & Attribution Bar -->
+    <div class="pt-8 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+      
+      <!-- Brand Logo / Copyright -->
+      <div class="flex items-center gap-4 text-left">
+        <div class="bg-vert px-3 py-1.5 rounded flex items-center justify-center">
+          <img src="/logos/logo-marchedemo-rec-contourwh.png" alt="Marché de Mo'" class="h-5 w-auto object-contain" />
+        </div>
+        <p class="text-[12px] text-neutral-500 font-medium">
+          &copy; {new Date().getFullYear()} {SITE.name}. Tous droits réservés.
+        </p>
+      </div>
+
+      <!-- Payment Gateways -->
+      <div class="opacity-75">
+        <PaymentIcons />
+      </div>
+
+      <!-- Mandatory Agency Credit -->
+      <p class="text-[12px] text-neutral-500 font-medium">
+        Fait par <a href="https://microdidact.com/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-white underline transition-colors">Microdidact</a>
+      </p>
+      
+    </div>
+
+  </div>
+</footer>

@@ -1,0 +1,457 @@
+---
+/**
+ * AdminTopbar — sticky header shared across every /admin/* page.
+ *
+ * Props
+ *   current?  : id of the active nav item (highlighted pill).
+ *   subtitle? : free text shown next to the brand on the second row
+ *               on >=md viewports (e.g. "Tableau de bord", "Catalogue · Fruits").
+ *
+ * Phase D refresh
+ * ---------------
+ *  - Environment badge (Local / Preview / Production) derived from
+ *    `process.env.VERCEL_ENV` and `import.meta.env.DEV`.
+ *  - Two-row layout that gracefully wraps on mobile.
+ *  - User menu via <details> (CSS-only) — keyboard accessible.
+ *  - "Catalogue" included in the nav for Phase C.
+ */
+import { SITE } from "@/lib/site";
+import KeyboardHelpOverlay from "@components/islands/admin/KeyboardHelpOverlay.jsx";
+
+interface Props {
+  current?:
+    | "dashboard"
+    | "inventaire"
+    | "catalogue"
+    | "promos"
+    | "produits"
+    | "medias"
+    | "images-gap"
+    | "affiches"
+    | "actus"
+    | "contenu-home"
+    | "banners";
+  subtitle?: string;
+}
+
+const { current, subtitle } = Astro.props as Props;
+
+const navItems = [
+  { id: "dashboard",  label: "Tableau de bord", href: "/admin",            icon: "📊" },
+  { id: "inventaire", label: "Inventaire",       href: "/admin/inventaire/inventaire", icon: "📦" },
+  { id: "catalogue",  label: "Catalogue",        href: "/admin/catalogue", icon: "🌳" },
+  { id: "promos",     label: "Promos",           href: "/admin/promos",     icon: "🏷" },
+  { id: "actus",      label: "Actualités",       href: "/admin/actus",      icon: "📰" },
+  { id: "contenu-home", label: "Accueil",        href: "/admin/contenu-home", icon: "🏠" },
+  { id: "produits",   label: "Produits",         href: "/admin/produits",   icon: "🛒" },
+  { id: "medias",     label: "Images",           href: "/admin/medias",     icon: "🖼" },
+  { id: "banners",    label: "Bannières",        href: "/admin/banners",    icon: "🎨" },
+  { id: "images-gap", label: "Manquantes",       href: "/admin/images-gap", icon: "⚠" },
+  { id: "affiches",   label: "Affiches A4",      href: "/admin/generateur-affiche", icon: "🖨" },
+] as const;
+
+/* Environment badge.
+ * Vercel exposes `VERCEL_ENV` ∈ { "production", "preview", "development" }
+ * as a build-time + runtime env var. Locally it's undefined and we
+ * fall back to import.meta.env.DEV. */
+const vercelEnv =
+  (typeof process !== "undefined" && process.env && (process.env.VERCEL_ENV as string)) || null;
+const isDev = import.meta.env.DEV;
+let envLabel: string;
+let envToneClass: string;
+let envDotClass: string;
+if (isDev) {
+  envLabel = "Local";
+  envToneClass = "bg-orange-100 text-orange-700 border-orange-200";
+  envDotClass = "bg-orange-500";
+} else if (vercelEnv === "preview") {
+  envLabel = "Preview";
+  envToneClass = "bg-blue-50 text-blue-700 border-blue-200";
+  envDotClass = "bg-blue-500";
+} else {
+  envLabel = "Production";
+  envToneClass = "bg-vert/10 text-vert-dark border-vert/30";
+  envDotClass = "bg-vert";
+}
+
+const showSubtitle = !!subtitle;
+---
+
+<header class="sticky top-0 z-40 bg-white/95 border-b border-black/5 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+  <div class="container-mo">
+    <!-- Row 1 : brand + env badge + actions -->
+    <div class="flex items-center justify-between h-14 gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <a href="/admin" class="flex items-center gap-3 shrink-0 group">
+          <img
+            src="/logos/favicon-marchedemo.png"
+            alt=""
+            class="h-7 w-7 rounded-md ring-1 ring-black/5 group-hover:ring-vert/40 transition"
+            aria-hidden="true"
+          />
+          <div class="hidden sm:flex flex-col leading-tight">
+            <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-neutral-400">
+              Admin {SITE.name}
+            </p>
+            <p class="font-soft font-bold text-[14px] truncate max-w-[18ch] md:max-w-none">
+              {showSubtitle ? subtitle : "Tableau de bord"}
+            </p>
+          </div>
+        </a>
+
+        <span
+          class:list={[
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider",
+            envToneClass,
+          ]}
+          title={`Environnement : ${envLabel}`}
+        >
+          <span class:list={["w-1.5 h-1.5 rounded-full", envDotClass]} aria-hidden="true"></span>
+          {envLabel}
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Theme Picker Popover (DA-aware swatch grid + intensity) - ONLY visible on affiches -->
+        {current === "affiches" && (
+          <details id="admin-theme-picker" class="relative group">
+            <summary
+            class="list-none flex items-center gap-1.5 cursor-pointer rounded-full bg-neutral-50 hover:bg-neutral-100 text-neutral-700 text-[12px] font-bold pl-2.5 pr-3 py-1.5 border border-black/10 transition select-none"
+            aria-label="Sélectionner le thème et l'intensité de l'administration"
+            title="Thème de l'admin"
+          >
+            <span id="admin-theme-trigger-icon" class="text-[14px] leading-none" aria-hidden="true">🌳</span>
+            <span id="admin-theme-trigger-name" class="hidden md:inline">Standard</span>
+            <span
+              id="admin-theme-trigger-intensity"
+              class="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-neutral-400"
+              aria-hidden="true"
+            >
+              <span class="hidden sm:inline">·</span>
+              <span class="hidden sm:inline">Discret</span>
+            </span>
+            <svg class="w-3 h-3 text-neutral-400 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </summary>
+
+          <div
+            class="absolute right-0 mt-2 w-[280px] bg-white rounded-2xl shadow-card border border-black/5 p-3 z-50"
+            role="dialog"
+            aria-label="Sélection du thème et de l'intensité"
+          >
+            <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-neutral-400 mb-2 px-1">
+              Thème
+            </p>
+            <div class="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label="Thème">
+              {[
+                { v: "default",   icon: "🌳", name: "Standard",  swatchA: "#1C6B35", swatchB: "#8B1919" },
+                { v: "spring",    icon: "🌸", name: "Printemps", swatchA: "#7CB342", swatchB: "#FF7043" },
+                { v: "summer",    icon: "☀️",  name: "Été",      swatchA: "#FB8C00", swatchB: "#E91E63" },
+                { v: "autumn",    icon: "🍂", name: "Automne",   swatchA: "#D84315", swatchB: "#FF8F00" },
+                { v: "winter",    icon: "❄️",  name: "Hiver",    swatchA: "#1976D2", swatchB: "#E53935" },
+                { v: "ramadan",   icon: "🌙", name: "Ramadan",   swatchA: "#1C6B35", swatchB: "#FFD700" },
+                { v: "christmas", icon: "�", name: "Noël",      swatchA: "#2E7D32", swatchB: "#C62828" },
+                { v: "easter",    icon: "🐰", name: "Pâques",    swatchA: "#9C27B0", swatchB: "#FFC107" },
+              ].map((t) => (
+                <button
+                  type="button"
+                  data-theme-value={t.v}
+                  class="theme-swatch group/swatch relative flex flex-col items-center gap-1 p-2 rounded-xl border border-transparent hover:bg-neutral-50 hover:border-black/5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-vert/40"
+                  role="radio"
+                  aria-checked="false"
+                  aria-label={t.name}
+                  title={t.name}
+                >
+                  <span class="relative w-9 h-9 rounded-full flex items-center justify-center overflow-hidden ring-1 ring-black/10">
+                    <span class="absolute inset-0" style={`background: linear-gradient(135deg, ${t.swatchA} 0%, ${t.swatchA} 50%, ${t.swatchB} 50%, ${t.swatchB} 100%);`}></span>
+                    <span class="relative text-[14px] drop-shadow-sm" aria-hidden="true">{t.icon}</span>
+                  </span>
+                  <span class="text-[10px] font-bold text-neutral-600 leading-tight text-center">{t.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <hr class="my-3 border-black/5" />
+
+            <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-neutral-400 mb-2 px-1">
+              Intensité
+            </p>
+            <div class="grid grid-cols-2 gap-1.5 bg-neutral-100 rounded-full p-1" role="radiogroup" aria-label="Intensité">
+              <button
+                type="button"
+                data-intensity-value="subtle"
+                class="intensity-pill flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-[12px] font-bold transition"
+                role="radio"
+                aria-checked="true"
+                title="Discret : la marque vert/rouge reste, seuls les accents décoratifs changent."
+              >
+                <span aria-hidden="true">✦</span>
+                <span>Discret</span>
+              </button>
+              <button
+                type="button"
+                data-intensity-value="bold"
+                class="intensity-pill flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-[12px] font-bold transition"
+                role="radio"
+                aria-checked="false"
+                title="Affirmé : la marque vert/rouge est remplacée par la palette du thème (prise de contrôle complète)."
+              >
+                <span aria-hidden="true">✸</span>
+                <span>Affirmé</span>
+              </button>
+            </div>
+            <p class="mt-2 text-[10.5px] leading-snug text-neutral-400 px-1">
+              <strong class="text-neutral-500 font-bold">Discret</strong> préserve la couleur de marque · <strong class="text-neutral-500 font-bold">Affirmé</strong> la remplace par celle du thème.
+            </p>
+            </div>
+          </details>
+        )}
+
+        <a
+          href="/"
+          class="text-[12px] text-neutral-500 hover:text-vert transition hidden md:inline-flex items-center gap-1"
+        >
+          <span>Voir le site</span>
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 17 17 7M9 7h8v8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+
+        <details class="relative group">
+          <summary
+            class="list-none flex items-center gap-2 cursor-pointer rounded-full px-2 py-1 hover:bg-neutral-100 transition"
+            aria-label="Menu administrateur"
+          >
+            <span
+              class="w-7 h-7 rounded-full bg-noir text-white text-[11px] font-bold flex items-center justify-center"
+              aria-hidden="true"
+            >M</span>
+            <span class="text-[12px] font-bold hidden sm:inline">Admin</span>
+            <svg class="w-3 h-3 text-neutral-400 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </summary>
+          <div class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-card border border-black/5 p-2 z-50">
+            <a href="/admin" class="block px-3 py-2 rounded-lg text-[13px] font-bold hover:bg-white">
+              Tableau de bord
+            </a>
+            <a href="/admin/inventaire/inventaire" class="block px-3 py-2 rounded-lg text-[13px] font-bold text-vert hover:bg-white">
+              Gestion Inventaire 📦
+            </a>
+            <a href="/admin/medias" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white">
+              Images
+            </a>
+            <a href="/admin/banners" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white">
+              Bannières (cultures & catégories)
+            </a>
+            <a href="/admin/actus" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white">
+              Actualités & blog
+            </a>
+            <a href="/admin/contenu-home" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white">
+              Contenu page d'accueil
+            </a>
+            <a href="/admin/generateur-affiche" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white">
+              Générateur d'affiches A4
+            </a>
+            <a href="/admin/images-gap" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white">
+              Produits sans image
+            </a>
+            <button
+              type="button"
+              data-kb-help-open
+              class="block w-full text-left px-3 py-2 rounded-lg text-[13px] hover:bg-white"
+            >
+              Raccourcis clavier
+              <span class="float-right text-[11px] text-neutral-400 font-mono">?</span>
+            </button>
+            <a href="/" class="block px-3 py-2 rounded-lg text-[13px] hover:bg-white md:hidden">
+              Voir le site public
+            </a>
+            <hr class="my-1 border-black/5" />
+            <a
+              href="/api/logout"
+              class="block px-3 py-2 rounded-lg text-[13px] font-bold text-rouge hover:bg-rouge/5"
+            >
+              Déconnexion
+            </a>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- Row 2 : nav -->
+    <nav
+      class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1"
+      aria-label="Sections administrateur"
+    >
+      {navItems.map((n) => (
+        <a
+          href={n.href}
+          class:list={[
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition",
+            current === n.id
+              ? "bg-noir text-white shadow-card"
+              : "text-neutral-600 hover:bg-white hover:text-noir",
+          ]}
+          aria-current={current === n.id ? "page" : undefined}
+        >
+          <span aria-hidden="true" class="text-[11px]">{n.icon}</span>
+          {n.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<!-- Mounted once per admin page : "?" anywhere opens the cheatsheet.
+     `client:idle` so the heavy React subtree loads only after the
+     critical content has painted ; the keyboard listener attaches
+     immediately on idle. -->
+<KeyboardHelpOverlay client:idle />
+
+<script>
+  /* Bridge from the user-menu "Raccourcis clavier" item to the React
+   * overlay. We can't directly call into the island, so we synthesise
+   * a "?" keydown — which the overlay listens for — making the menu
+   * a thin alias for the keyboard shortcut. */
+  document.addEventListener("click", (e) => {
+    const target = e.target instanceof Element ? e.target.closest("[data-kb-help-open]") : null;
+    if (!target) return;
+    e.preventDefault();
+    /* Close the user-menu <details> first so the overlay isn't
+     * obscured by it. */
+    const details = target.closest("details");
+    if (details) details.removeAttribute("open");
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", bubbles: true }));
+  });
+
+  /* Theme picker — swatch grid + intensity toggle.
+   * Persists `admin_selected_theme` (string) and `admin_theme_intensity`
+   * ("subtle" | "bold") to localStorage and reflects them on
+   * <html data-admin-theme=...> and <html data-admin-intensity=...>. */
+  (() => {
+    type ThemeValue = "default" | "spring" | "summer" | "autumn" | "winter" | "ramadan" | "christmas" | "easter";
+    type Intensity = "subtle" | "bold";
+
+    const picker = document.getElementById("admin-theme-picker") as HTMLDetailsElement | null;
+    if (!picker) {
+      // Clear theme if we are on a page without the theme picker
+      document.documentElement.removeAttribute("data-admin-theme");
+      document.documentElement.removeAttribute("data-admin-intensity");
+      return;
+    }
+    const swatches = picker.querySelectorAll<HTMLButtonElement>("[data-theme-value]");
+    const pills = picker.querySelectorAll<HTMLButtonElement>("[data-intensity-value]");
+    const triggerIcon = document.getElementById("admin-theme-trigger-icon");
+    const triggerName = document.getElementById("admin-theme-trigger-name");
+    const triggerIntensity = document.getElementById("admin-theme-trigger-intensity");
+
+    const ICON_BY_THEME: Record<ThemeValue, string> = {
+      default: "🌳",
+      spring: "🌸",
+      summer: "☀️",
+      autumn: "🍂",
+      winter: "❄️",
+      ramadan: "🌙",
+      christmas: "🎄",
+      easter: "🐰",
+    };
+    const NAME_BY_THEME: Record<ThemeValue, string> = {
+      default: "Standard",
+      spring: "Printemps",
+      summer: "Été",
+      autumn: "Automne",
+      winter: "Hiver",
+      ramadan: "Ramadan",
+      christmas: "Noël",
+      easter: "Pâques",
+    };
+
+    function getStoredTheme(): ThemeValue {
+      const v = localStorage.getItem("admin_selected_theme") || "default";
+      return (Object.keys(ICON_BY_THEME).includes(v) ? v : "default") as ThemeValue;
+    }
+    function getStoredIntensity(): Intensity {
+      const v = localStorage.getItem("admin_theme_intensity");
+      return v === "bold" ? "bold" : "subtle";
+    }
+
+    function reflect(theme: ThemeValue, intensity: Intensity) {
+      // <html> attributes
+      if (theme === "default") {
+        document.documentElement.removeAttribute("data-admin-theme");
+      } else {
+        document.documentElement.setAttribute("data-admin-theme", theme);
+      }
+      if (intensity === "bold") {
+        document.documentElement.setAttribute("data-admin-intensity", "bold");
+      } else {
+        document.documentElement.removeAttribute("data-admin-intensity");
+      }
+      // localStorage
+      if (theme === "default") localStorage.removeItem("admin_selected_theme");
+      else localStorage.setItem("admin_selected_theme", theme);
+      if (intensity === "bold") localStorage.setItem("admin_theme_intensity", "bold");
+      else localStorage.removeItem("admin_theme_intensity");
+      // Trigger label
+      if (triggerIcon) triggerIcon.textContent = ICON_BY_THEME[theme];
+      if (triggerName) triggerName.textContent = NAME_BY_THEME[theme];
+      if (triggerIntensity) {
+        triggerIntensity.innerHTML = `
+          <span class="hidden sm:inline">·</span>
+          <span class="hidden sm:inline">${intensity === "bold" ? "Affirmé" : "Discret"}</span>
+        `;
+      }
+      // Active swatch styling
+      swatches.forEach((btn) => {
+        const isActive = btn.dataset.themeValue === theme;
+        btn.setAttribute("aria-checked", isActive ? "true" : "false");
+        btn.classList.toggle("bg-vert/10", isActive);
+        btn.classList.toggle("border-vert/30", isActive);
+      });
+      // Active intensity pill styling
+      pills.forEach((btn) => {
+        const isActive = btn.dataset.intensityValue === intensity;
+        btn.setAttribute("aria-checked", isActive ? "true" : "false");
+        btn.classList.toggle("bg-white", isActive);
+        btn.classList.toggle("text-noir", isActive);
+        btn.classList.toggle("shadow-card", isActive);
+        btn.classList.toggle("text-neutral-500", !isActive);
+      });
+    }
+
+    let currentTheme: ThemeValue = getStoredTheme();
+    let currentIntensity: Intensity = getStoredIntensity();
+    reflect(currentTheme, currentIntensity);
+
+    swatches.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentTheme = (btn.dataset.themeValue as ThemeValue) || "default";
+        reflect(currentTheme, currentIntensity);
+      });
+    });
+    pills.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentIntensity = (btn.dataset.intensityValue as Intensity) || "subtle";
+        reflect(currentTheme, currentIntensity);
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener("click", (e) => {
+      if (!picker.open) return;
+      const target = e.target as Node | null;
+      if (target && !picker.contains(target)) picker.removeAttribute("open");
+    });
+    // Close on Escape
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && picker.open) picker.removeAttribute("open");
+    });
+  })();
+</script>
+
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+</style>

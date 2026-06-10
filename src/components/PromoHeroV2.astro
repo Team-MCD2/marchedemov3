@@ -1,0 +1,1170 @@
+---
+/**
+ * PromoHero — full-width banner carousel, one slide at a time.
+ *
+ * Inspired by Grand Frais / Picard top-of-home banner. Distinct from
+ * `PromoCarousel` (which shows a row of 3-4 cards at once, scrollable).
+ *
+ * Interactions (all simultaneously) :
+ *   1. Auto-advance every 6s (pause on hover/focus/touch, resume after 8s)
+ *   2. Swipe on touch devices (CSS Scroll Snap native)
+ *   3. Pointer drag (click + drag) on desktop
+ *   4. Prev/Next arrow buttons
+ *   5. Indicator dots (click = jump to slide)
+ *   6. Keyboard : ArrowLeft / ArrowRight when focused
+ *
+ * Accessibility :
+ *   - aria-roledescription="carousel" on container
+ *   - aria-live="polite" on status announcement area
+ *   - Dots are real buttons with aria-current
+ *   - prefers-reduced-motion : auto-advance disabled, all other
+ *     interactions remain
+ *
+ * Slides can come from 2 sources :
+ *   - Dynamic : promos mise_en_avant (passed as `promos`)
+ *   - Static  : editorial slides (passed as `extraSlides`) — fidelity
+ *               card promo, new store opening, app download, etc.
+ */
+import type { PromoEntry } from "@/lib/promos-repo";
+import { supabaseSrcSet } from "@/lib/image-cdn";
+
+export interface Slide {
+  kind: "banner" | "promo" | "editorial" | "video";
+  titre: string;
+  description: string;
+  eyebrow: string;
+  image: string;
+  /** Optional phone-tailored image (vertical/portrait aspect).
+   * When provided, swapped in via <picture><source media> at < 768px. */
+  imageMobile: string | null;
+  imageAlt: string;
+  ctaLabel: string;
+  ctaHref: string;
+  accent: string;
+  prixPromo: number | null;
+  prixOriginal: number | null;
+  reductionPct: number | null;
+  videoUrl: string | null;
+}
+
+const magasinLabel = (m: string): string =>
+  m === "tous" || m === "toulouse-sud" ? "Toulouse Sud — Cépière" : m;
+
+export interface ExtraSlide {
+  kind: "editorial";
+  eyebrow: string;
+  titre: string;
+  description: string;
+  image: string;
+  imageAlt?: string;
+  ctaLabel: string;
+  ctaHref: string;
+  /** Background accent (CSS color) for overlay tint. Default : vert. */
+  accent?: string;
+  videoUrl?: string | null;
+}
+
+interface Props {
+  /** Active & featured promos. Limit = 5 auto-enforced. */
+  promos?: PromoEntry[];
+  /** Editorial slides (app download, fidelity card, new stores, etc.) */
+  extraSlides?: ExtraSlide[];
+  /** Auto-advance delay in ms. Default 6000. Set 0 to disable. */
+  autoAdvanceMs?: number;
+}
+
+const { promos = [], extraSlides = [], autoAdvanceMs = 2800 } = Astro.props as Props;
+
+/* Featured rectangular banner — always first slide.
+ * `imageMobile` is swapped in via <picture><source media> below 768px.
+ * Both files live in /public/promos/ and are served by Astro static. */
+const agneauBannerSlide = {
+  kind: "banner" as const,
+  titre: "Promo Agneau Aïd el Kebir",
+  description: "",
+  eyebrow: "",
+  image: "/promos/promo_rectangulaire.webp",
+  imageMobile: "/promos/promo_mobile_marchedemo.jpeg" as string | null,
+  imageAlt: "Promo agneau Aïd — 290€ prix coûtant, Marché de Mo'",
+  ctaLabel: "",
+  ctaHref: "/promos",
+  accent: "#1C6B35",
+  prixPromo: null as number | null,
+  prixOriginal: null as number | null,
+  reductionPct: null as number | null,
+  videoUrl: null as string | null,
+};
+
+/* Build slides array — promos first, editorial after. Max 5 total. */
+const promoSlides = promos.slice(0, 5).map((p) => ({
+  kind: "promo" as const,
+  titre: p.data.titre,
+  description: p.data.description || `${p.data.prix_promo}€ au lieu de ${p.data.prix_original}€`,
+  eyebrow: `Promo · ${magasinLabel(p.data.magasin)}`,
+  image: p.data.image,
+  imageMobile: null as string | null,
+  imageAlt: p.data.titre,
+  ctaLabel: "Voir la promo →",
+  ctaHref: "/promos",
+  accent: "#C53030",
+  prixPromo: p.data.prix_promo,
+  prixOriginal: p.data.prix_original,
+  reductionPct: p.data.reduction_pct,
+  videoUrl: null as string | null,
+}));
+
+const editorialSlides = extraSlides.map((s) => ({
+  kind: s.videoUrl ? ("video" as const) : ("editorial" as const),
+  titre: s.titre,
+  description: s.description,
+  eyebrow: s.eyebrow,
+  image: s.image,
+  imageMobile: null as string | null,
+  imageAlt: s.imageAlt ?? s.titre,
+  ctaLabel: s.ctaLabel,
+  ctaHref: s.ctaHref,
+  accent: s.accent ?? "#1C6B35",
+  prixPromo: null as number | null,
+  prixOriginal: null as number | null,
+  reductionPct: null as number | null,
+  videoUrl: s.videoUrl || null,
+}));
+
+const hasDynamicVideo = editorialSlides.some((s) => s.kind === "video");
+
+const initialSlides: Slide[] = [agneauBannerSlide, ...promoSlides, ...editorialSlides];
+const videoSlide = {
+  kind: "video" as const,
+  titre: "Votre supermarché du monde à Toulouse",
+  description: "Boucherie halal sur carcasse, fruits & légumes exotiques, épices du monde. Ouvert 7j/7.",
+  eyebrow: "Vidéo · Marché de Mo'",
+  image: "/images/home/hero.jpg",
+  imageMobile: null as string | null,
+  imageAlt: "Vidéo Marché de Mo'",
+  ctaLabel: "Voir nos rayons",
+  ctaHref: "/rayons",
+  accent: "#1C6B35",
+  prixPromo: null as number | null,
+  prixOriginal: null as number | null,
+  reductionPct: null as number | null,
+  videoUrl: "/videos/marchedemo-promo.mp4",
+};
+
+if (!hasDynamicVideo) {
+  if (initialSlides.length > 0) {
+    initialSlides.splice(1, 0, videoSlide);
+  } else {
+    initialSlides.push(videoSlide);
+  }
+}
+
+const baseSlides = initialSlides;
+const slideCount = baseSlides.length;
+/* Clone head/tail for seamless infinite loop (always shows neighbour peeks). */
+const loopSlides =
+  slideCount > 1
+    ? [baseSlides[slideCount - 1], ...baseSlides, baseSlides[0]]
+    : baseSlides;
+const hasSlides = slideCount > 0;
+
+const isGreenOverlaySlide = (s: (typeof baseSlides)[number]) =>
+  s.kind === "banner" ||
+  s.kind === "video" ||
+  (s.kind === "editorial" && (s.accent ?? "#1C6B35").toLowerCase() === "#1c6b35");
+
+/* Hero is full-bleed (100vw). Widths cover : mobile portrait DPR 3
+ * (≈ 1290 px), tablet landscape DPR 2 (≈ 2048 px), desktop 1920 DPR 1.
+ * Above 2400 px the file cost (> 250 KB even as WebP) outweighs the
+ * extra sharpness at the distance a user views a hero photo. */
+const heroWidths = [800, 1200, 1600, 2400];
+const heroSizes = "62vw";
+const heroSources = loopSlides.map((s) =>
+  s.kind === "banner" || s.image.startsWith("/promos/")
+    ? { src: s.image, srcset: "" }
+    : supabaseSrcSet(s.image, heroWidths, { quality: 78 }),
+);
+---
+
+{hasSlides && (
+  <section
+    class="promo-hero"
+    data-auto-ms={autoAdvanceMs}
+    data-slide-count={slideCount}
+    data-loop={slideCount > 1 ? "true" : undefined}
+    aria-roledescription="carousel"
+    aria-label="Promotions et annonces"
+  >
+    {/* Track : horizontal scroll with snap */}
+    <div class="promo-hero-track" data-promo-hero-track tabindex="0" role="region">
+      {loopSlides.map((slide, i) => {
+        const isVideo = slide.kind === "video";
+        const isBanner = slide.kind === "banner";
+        const isClone = slideCount > 1 && (i === 0 || i === loopSlides.length - 1);
+        const realIndex =
+          slideCount > 1
+            ? i === 0
+              ? slideCount - 1
+              : i === loopSlides.length - 1
+                ? 0
+                : i - 1
+            : i;
+        const hideText = slide.kind === "banner";
+        return (
+          <article
+            class={`promo-hero-slide ${isVideo ? "promo-hero-slide-video-layout" : ""} ${isBanner ? "promo-hero-slide--banner" : ""}`}
+            role="group"
+            aria-roledescription="diapositive"
+            aria-label={`${realIndex + 1} sur ${slideCount} : ${slide.titre}`}
+            data-slide-index={realIndex}
+            data-dom-index={i}
+            data-loop-clone={isClone ? "true" : undefined}
+            style={isVideo ? `background-color: ${slide.accent} !important;` : ""}
+          >
+            {isVideo ? (
+              /* Split Screen Layout for Video Slide */
+              <div class="promo-video-layout-container w-full h-full flex flex-col-reverse md:flex-row relative">
+                <!-- Background decorative wave grid for the video slide -->
+                <div class="absolute inset-0 bg-transparent z-0"></div>
+                <div 
+                  class="absolute inset-0 opacity-[0.035] pointer-events-none z-0" 
+                  style={`background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, rgba(0,0,0,0) 80%), url("data:image/svg+xml,%3Csvg width='120' height='24' viewBox='0 0 120 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 12 Q 30 0, 60 12 T 120 12' fill='none' stroke='${encodeURIComponent(slide.accent)}' stroke-width='1.5'/%3E%3C/svg%3E");`}
+                ></div>
+                
+                <!-- Left text column (hidden on green-accent / video slides per design) -->
+                {!hideText && (
+                  <div class="promo-video-left flex-1 flex flex-col justify-end md:justify-center p-4 md:p-8 lg:p-12 z-10 text-white">
+                    <div class="promo-hero-slide-inner">
+                      <span class="promo-hero-eyebrow" style={`--accent: ${slide.accent}`}>{slide.eyebrow}</span>
+                      <h2 class="promo-hero-title text-balance text-white mt-2">{slide.titre}</h2>
+                      <p class="promo-hero-desc text-white/90 mt-2 max-w-xl">{slide.description}</p>
+                      <a
+                        href={slide.ctaHref}
+                        class="promo-hero-cta btn-sheen mt-4 inline-flex"
+                        style={`--accent: ${slide.accent}`}
+                      >
+                        {slide.ctaLabel}
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                          <path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                )}
+                
+                <!-- Right video player card column -->
+                <div class="promo-video-right flex-1 flex items-center justify-center p-4 md:p-6 z-10 relative">
+                  <div class="w-full max-w-[420px] aspect-video md:aspect-[16/10] rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-neutral-900 relative">
+                    <video
+                      muted
+                      playsinline
+                      loop
+                      autoplay
+                      class="w-full h-full object-cover"
+                    >
+                      {/* WebM transcodes are intentionally disabled : no
+                          .webm siblings exist in /public/videos yet,
+                          which previously caused a 404 per video on
+                          every request. To re-enable, generate WebM
+                          versions (ffmpeg -c:v libvpx-vp9) and add a
+                          <source type="video/webm"> back here BEFORE the
+                          .mp4 fallback so VP9-capable clients pick it up. */}
+                      {slide.videoUrl && (
+                        <source src={slide.videoUrl} type={slide.videoUrl.endsWith(".mp4") ? "video/mp4" : undefined} />
+                      )}
+                    </video>
+                    <!-- Glowing frame overlay -->
+                    <div class="absolute inset-0 ring-1 ring-inset ring-white/10 pointer-events-none rounded-2xl"></div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Image promo / banner slide */
+              <>
+                <div class="promo-hero-slide-image-wrap">
+                  <picture>
+                    {slide.imageMobile && (
+                      <source
+                        media="(max-width: 767px)"
+                        srcset={slide.imageMobile}
+                      />
+                    )}
+                    <img
+                      src={heroSources[i].src || slide.image}
+                      srcset={heroSources[i].srcset || undefined}
+                      sizes={heroSizes}
+                      alt={slide.imageAlt}
+                      loading={realIndex === 0 && !isClone ? "eager" : "lazy"}
+                      fetchpriority={realIndex === 0 && !isClone ? "high" : undefined}
+                      decoding="async"
+                      class="promo-hero-slide-image"
+                      width={isBanner ? "1200" : "1920"}
+                      height={isBanner ? "510" : "820"}
+                    />
+                  </picture>
+                  {!isBanner && (
+                    <div
+                      class="promo-hero-slide-overlay"
+                      style={`--accent: ${slide.accent}`}
+                    ></div>
+                  )}
+                </div>
+
+                {!hideText && (
+                  <div class="promo-hero-slide-content">
+                    <div class="container-mo promo-hero-slide-inner">
+                      <span class="promo-hero-eyebrow">{slide.eyebrow}</span>
+                      <h2 class="promo-hero-title text-balance">{slide.titre}</h2>
+                      <p class="promo-hero-desc">{slide.description}</p>
+
+                      {slide.kind === "promo" && slide.prixPromo != null && (
+                        <div class="promo-hero-price">
+                          <span class="promo-hero-price-now">{slide.prixPromo}€</span>
+                          {slide.prixOriginal != null && (
+                            <span class="promo-hero-price-before">{slide.prixOriginal}€</span>
+                          )}
+                          {slide.reductionPct != null && (
+                            <span class="promo-hero-price-pct">−{slide.reductionPct}%</span>
+                          )}
+                        </div>
+                      )}
+
+                      <a
+                        href={slide.ctaHref}
+                        class="promo-hero-cta btn-sheen"
+                        style={`--accent: ${slide.accent}`}
+                      >
+                        {slide.ctaLabel}
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                          <path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </article>
+        );
+      })}
+    </div>
+
+    {/* Prev / Next buttons */}
+    <button type="button" class="promo-hero-nav promo-hero-nav-prev" data-promo-hero-prev aria-label="Diapositive précédente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button type="button" class="promo-hero-nav promo-hero-nav-next" data-promo-hero-next aria-label="Diapositive suivante">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    {/* Dots indicator */}
+    <div class="promo-hero-dots" role="tablist" aria-label="Sélectionner une diapositive">
+      {baseSlides.map((_, i) => (
+        <button
+          type="button"
+          class="promo-hero-dot"
+          data-promo-hero-dot={i}
+          role="tab"
+          aria-label={`Diapositive ${i + 1} sur ${slideCount}`}
+          aria-current={i === 0 ? "true" : undefined}
+        ></button>
+      ))}
+    </div>
+
+    {/* Screen-reader status */}
+    <div class="sr-only" data-promo-hero-status aria-live="polite" aria-atomic="true"></div>
+  </section>
+)}
+
+<style>
+  .promo-hero {
+    position: relative;
+    width: 100%;
+    background: #ffffff;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 0;
+    padding: 10px 0 12px;
+  }
+  @media (max-width: 768px) {
+    .promo-hero {
+      padding: 8px 0 10px;
+    }
+  }
+
+  .promo-hero-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: 0 15vw;
+    gap: 20px;
+  }
+  @media (max-width: 768px) {
+    .promo-hero-track {
+      padding: 0 4vw;
+      gap: 12px;
+    }
+  }
+  .promo-hero-track::-webkit-scrollbar { display: none; }
+  .promo-hero-track.is-dragging { cursor: grabbing; scroll-behavior: auto; }
+  .promo-hero-track:focus { outline: none; }
+
+  .promo-hero-slide {
+    flex: 0 0 62vw;
+    width: 62vw;
+    position: relative;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    aspect-ratio: 21 / 8;
+    max-height: min(45vh, 360px);
+    min-height: 200px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    border: 3px solid #1C6B35;
+  }
+  .promo-hero-slide--banner {
+    /* Height and aspect ratio overrides removed to inherit from .promo-hero-slide */
+  }
+  /* Tablet (768-1023px) — inherits desktop sizing automatically. */
+
+  /* Phone (< 768px) — Grand Frais-style long mobile hero.
+     Slides get really tall (≈ 60vh) so they captivate above the fold,
+     and stretch nearly full-width. The banner slide swaps to a
+     phone-tailored vertical image via <picture><source media>, so we
+     override `contain` (used on desktop to letterbox the wide artwork)
+     with `cover` for an edge-to-edge phone experience. */
+  @media (max-width: 767px) {
+    .promo-hero-track {
+      padding: 0 2vw;
+      gap: 10px;
+    }
+    .promo-hero-slide {
+      flex: 0 0 96vw;
+      width: 96vw;
+      aspect-ratio: auto;
+      /* `dvh` keeps the height stable when the URL bar collapses on
+         iOS Safari ; `vh` is the fallback for older browsers. */
+      height: clamp(430px, 65vh, 600px);
+      height: clamp(430px, 65dvh, 600px);
+      max-height: 80dvh;
+      min-height: 430px;
+      border-radius: 18px;
+    }
+    /* Banner slide — uses the mobile image (vertical aspect).
+       Override the desktop `contain` rule so the artwork fills the
+       slide edge-to-edge on phone. The mobile asset is intentionally
+       cropped/composed for this aspect, so `cover` is safe here. */
+    .promo-hero-slide--banner .promo-hero-slide-image {
+      object-fit: cover;
+      object-position: center;
+      padding: 0;
+    }
+  }
+
+  .promo-hero-slide-image-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .promo-hero-slide-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.08);
+    transition: transform 8s ease-out;
+  }
+  /* Banner slide (e.g. promo agneau Aïd) — we use `contain` so the
+     entire artwork is visible without cropping. The image is 21:8.92
+     while the slide is 21:8, so `cover` was zooming in and clipping
+     the artwork's edges (user feedback : "trop grosse, on ne voit pas
+     tout"). With `contain` the slide keeps its existing height and the
+     image fits inside it without distortion. A subtle white surface
+     fills the thin letterbox so it stays on-brand. */
+  .promo-hero-slide--banner {
+    background: #ffffff;
+  }
+  .promo-hero-slide--banner .promo-hero-slide-image {
+    object-fit: contain;
+    object-position: center;
+    transform: none;
+    padding: 4px;
+  }
+  /* Ken-Burns : every slide image slowly drifts when it's the active one.
+     We toggle .is-active via JS once the slide is centered in view. */
+  .promo-hero-slide.is-active .promo-hero-slide-image {
+    transform: scale(1);
+  }
+  .promo-hero-slide--banner.is-active .promo-hero-slide-image {
+    transform: none;
+  }
+
+  .promo-hero-slide-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent, #1C6B35) 35%, transparent) 0%, transparent 60%);
+  }
+
+  .promo-hero-slide-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding-top: clamp(20px, 3.5vh, 32px);
+    padding-bottom: clamp(36px, 5vh, 48px);
+  }
+  .promo-hero-slide-inner {
+    color: white;
+    max-width: 640px;
+    /* Staggered fade-in when this slide becomes active — timing reduit
+       pour un feel plus snappy (user feedback : "transitions trop longues"). */
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.35s ease-out 0.05s, transform 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s;
+  }
+  .promo-hero-slide.is-active .promo-hero-slide-inner {
+    opacity: 1;
+    transform: none;
+  }
+
+  .promo-hero-eyebrow {
+    display: inline-block;
+    font-family: var(--font-pro, inherit);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--accent, #1C6B35) 85%, white 15%);
+    padding: 6px 14px;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    margin-bottom: 8px;
+  }
+
+  .promo-hero-title {
+    font-family: var(--font-soft, inherit);
+    font-weight: 900;
+    font-size: clamp(22px, 3.5vw, 40px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    margin: 0 0 8px;
+    /* Override the global `h1..h6 { color: var(--color-noir) }` rule
+       in styles/global.css — the title sits on top of a dark photo
+       overlay, so it must be white. Without this, the heading
+       renders black-on-photo and is unreadable. */
+    color: #fff;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.6);
+  }
+  .promo-hero-desc {
+    font-size: clamp(14px, 1.3vw, 16px);
+    line-height: 1.45;
+    max-width: 520px;
+    margin: 0 0 10px;
+    color: rgba(255,255,255,0.92);
+    text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+  }
+
+  .promo-hero-price {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .promo-hero-price-now {
+    font-family: var(--font-soft, inherit);
+    font-weight: 900;
+    font-size: clamp(36px, 5vw, 52px);
+    line-height: 1;
+    color: white;
+  }
+  .promo-hero-price-before {
+    font-size: 18px;
+    text-decoration: line-through;
+    opacity: 0.65;
+  }
+  .promo-hero-price-pct {
+    font-family: var(--font-pro, inherit);
+    font-weight: 800;
+    font-size: 14px;
+    background: white;
+    color: #C53030;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .promo-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 22px;
+    background: white;
+    color: #0F0F0F;
+    font-family: var(--font-pro, inherit);
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: transform 0.25s cubic-bezier(0.22,1,0.36,1),
+                box-shadow 0.25s ease,
+                background 0.25s ease,
+                color 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .promo-hero-cta:hover,
+  .promo-hero-cta:focus-visible {
+    transform: translateY(-2px);
+    background: var(--accent, #1C6B35);
+    color: white;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.4);
+    outline: none;
+  }
+
+  /* --- Nav arrows --- */
+  .promo-hero-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.92);
+    color: #0F0F0F;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    transition: background 0.2s, transform 0.2s, opacity 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+  .promo-hero-nav svg { width: 22px; height: 22px; }
+  .promo-hero-nav:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.06);
+  }
+  .promo-hero-nav:focus-visible {
+    outline: 3px solid white;
+    outline-offset: 2px;
+  }
+  .promo-hero-nav-prev { left: clamp(12px, 3vw, 40px); }
+  .promo-hero-nav-next { right: clamp(12px, 3vw, 40px); }
+  @media (max-width: 640px) {
+    .promo-hero-nav { display: none; }
+  }
+
+  /* --- Dots --- */
+  .promo-hero-dots {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+    border-radius: 999px;
+  }
+  /* The button itself is 24×24 (WCAG 2.5.8 touch-target minimum) and
+     transparent ; the visible 8×8 dot is drawn via ::before so that
+     the hit area is comfortable on touch screens without changing the
+     compact dot aesthetic. The "active" dot stretches to 28px wide. */
+  .promo-hero-dot {
+    width: 24px;
+    height: 24px;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+  }
+  .promo-hero-dot::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, background 0.3s;
+  }
+  .promo-hero-dot[aria-current="true"]::before {
+    width: 28px;
+    background: white;
+  }
+  .promo-hero-dot:hover::before { background: rgba(255,255,255,0.7); }
+  .promo-hero-dot:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+    border-radius: 999px;
+  }
+
+  /* Reduced motion : no Ken Burns, no slide stagger, no auto-advance */
+  @media (prefers-reduced-motion: reduce) {
+    .promo-hero-slide-image,
+    .promo-hero-slide.is-active .promo-hero-slide-image {
+      transition: none;
+      transform: none;
+    }
+    .promo-hero-slide-inner {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .promo-hero-track { scroll-behavior: auto; }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Video slide split layout styles */
+  .promo-hero-slide-video-layout {
+    background: #1C6B35;
+    transition: background-color 1.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  }
+  @media (max-width: 768px) {
+    .promo-video-left {
+      padding: 20px 24px 32px !important;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+    }
+    .promo-video-right {
+      padding: 32px 24px 0 !important;
+      flex: 1.1 1 0% !important;
+    }
+    .promo-video-left .promo-hero-title {
+      font-size: 26px !important;
+      margin-bottom: 8px !important;
+      text-align: center;
+    }
+    .promo-video-left .promo-hero-desc {
+      font-size: 13px !important;
+      margin-bottom: 14px !important;
+      text-align: center;
+    }
+    .promo-video-left .promo-hero-cta {
+      padding: 10px 22px !important;
+      font-size: 13px !important;
+      margin-top: 6px !important;
+      align-self: center;
+    }
+    .promo-video-left .promo-hero-eyebrow {
+      margin-bottom: 8px !important;
+      padding: 4px 10px !important;
+      font-size: 10px !important;
+    }
+  }
+</style>
+
+<script>
+  function mountPromoHero() {
+    const heroes = document.querySelectorAll<HTMLElement>(".promo-hero");
+    heroes.forEach((hero) => {
+      if ((hero as any).__promoHeroMounted) return;
+      (hero as any).__promoHeroMounted = true;
+
+      const track = hero.querySelector<HTMLElement>("[data-promo-hero-track]");
+      const prev = hero.querySelector<HTMLButtonElement>("[data-promo-hero-prev]");
+      const next = hero.querySelector<HTMLButtonElement>("[data-promo-hero-next]");
+      const dots = Array.from(hero.querySelectorAll<HTMLButtonElement>("[data-promo-hero-dot]"));
+      const status = hero.querySelector<HTMLElement>("[data-promo-hero-status]");
+      const domSlides = Array.from(hero.querySelectorAll<HTMLElement>(".promo-hero-slide"));
+      if (!track || domSlides.length === 0) return;
+
+      const logicalCount = Math.max(1, Number(hero.dataset.slideCount) || domSlides.length);
+      const hasLoop = hero.dataset.loop === "true" && logicalCount > 1;
+
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const autoMs = Math.max(0, Number(hero.dataset.autoMs) || 0);
+
+      let activeIndex = 0;
+      let paused = reduced;
+      let pauseUntil = 0;
+      let autoTimer: number | null = null;
+      let isUserScrolling = false;
+      let scrollSettleTimer: number | null = null;
+      let isLoopJumping = false;
+
+      const domToLogical = (domIdx: number) => {
+        const slide = domSlides[domIdx];
+        return Number(slide?.dataset.slideIndex ?? domIdx);
+      };
+
+      const logicalToDom = (logicalIdx: number) => {
+        const target = ((logicalIdx % logicalCount) + logicalCount) % logicalCount;
+        return hasLoop ? target + 1 : target;
+      };
+
+      const scrollToDomIndex = (domIdx: number, smooth = true) => {
+        const slide = domSlides[domIdx];
+        if (!slide) return;
+        const targetScrollLeft =
+          track.scrollLeft +
+          slide.getBoundingClientRect().left -
+          track.getBoundingClientRect().left -
+          (track.clientWidth - slide.clientWidth) / 2;
+        track.scrollTo({
+          left: targetScrollLeft,
+          behavior: smooth && !reduced ? "smooth" : "auto",
+        });
+      };
+
+      const getClosestDomIndex = () => {
+        const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
+        let closestIdx = 0;
+        let minDiff = Infinity;
+        domSlides.forEach((slide, i) => {
+          const slideCenter = slide.getBoundingClientRect().left + slide.clientWidth / 2;
+          const diff = Math.abs(slideCenter - trackCenter);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIdx = i;
+          }
+        });
+        return closestIdx;
+      };
+
+      const wrapLoopIfNeeded = () => {
+        if (!hasLoop || isLoopJumping) return;
+        const domIdx = getClosestDomIndex();
+        if (domIdx === 0) {
+          isLoopJumping = true;
+          const jumpDom = logicalToDom(logicalCount - 1);
+          scrollToDomIndex(jumpDom, false);
+          markActive(logicalCount - 1);
+          isLoopJumping = false;
+        } else if (domIdx === domSlides.length - 1) {
+          isLoopJumping = true;
+          const jumpDom = logicalToDom(0);
+          scrollToDomIndex(jumpDom, false);
+          markActive(0);
+          isLoopJumping = false;
+        }
+      };
+
+      const settleActiveFromScroll = () => {
+        wrapLoopIfNeeded();
+        const domIdx = getClosestDomIndex();
+        markActive(domToLogical(domIdx));
+      };
+
+      const onTrackScroll = () => {
+        isUserScrolling = true;
+        if (scrollSettleTimer) clearTimeout(scrollSettleTimer);
+        scrollSettleTimer = window.setTimeout(() => {
+          isUserScrolling = false;
+          settleActiveFromScroll();
+        }, 80);
+      };
+
+      track.addEventListener("scroll", onTrackScroll, { passive: true });
+      if ("onscrollend" in track) {
+        track.addEventListener("scrollend", () => {
+          isUserScrolling = false;
+          if (scrollSettleTimer) clearTimeout(scrollSettleTimer);
+          settleActiveFromScroll();
+        });
+      }
+
+      const markActive = (logicalIdx: number) => {
+        const idx = ((logicalIdx % logicalCount) + logicalCount) % logicalCount;
+        activeIndex = idx;
+        domSlides.forEach((s) => {
+          const isLogicalMatch = Number(s.dataset.slideIndex) === idx;
+          s.classList.toggle("is-active", isLogicalMatch && !isLoopJumping);
+        });
+        dots.forEach((d, i) => {
+          if (i === idx) d.setAttribute("aria-current", "true");
+          else d.removeAttribute("aria-current");
+        });
+        if (status) {
+          const domIdx = logicalToDom(idx);
+          const slide = domSlides[domIdx];
+          status.textContent = slide?.getAttribute("aria-label") ?? "";
+        }
+
+      const setupVideoBgSync = (video: HTMLVideoElement, slideElement: HTMLElement) => {
+        if ((video as any).__bgSyncSetup) return;
+        (video as any).__bgSyncSetup = true;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+
+        let animFrameId: number;
+
+        const updateColor = () => {
+          if (video.paused || video.ended) return;
+          try {
+            ctx.drawImage(video, 0, 0, 1, 1);
+            const pixel = ctx.getImageData(0, 0, 1, 1).data;
+            const r = pixel[0];
+            const g = pixel[1];
+            const b = pixel[2];
+
+            // Convert RGB to HSL
+            let rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+            let max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
+            let h = 0, s = 0, l = (max + min) / 2;
+
+            if (max !== min) {
+              let d = max - min;
+              s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+              switch (max) {
+                case rNorm: h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0); break;
+                case gNorm: h = (bNorm - rNorm) / d + 2; break;
+                case bNorm: h = (rNorm - gNorm) / d + 4; break;
+              }
+              h /= 6;
+            }
+
+            h = Math.round(h * 360);
+
+            // Visible dark premium colors: targetL = 14%
+            let targetL = 14;
+            let targetS = Math.min(Math.max(Math.round(s * 100), 25), 45);
+
+            slideElement.style.setProperty("background-color", `hsl(${h}, ${targetS}%, ${targetL}%)`, "important");
+          } catch (e) {
+            // Silently swallow canvas errors
+          }
+          animFrameId = requestAnimationFrame(updateColor);
+        };
+
+        video.addEventListener("play", () => {
+          updateColor();
+        });
+        video.addEventListener("pause", () => {
+          cancelAnimationFrame(animFrameId);
+        });
+
+        // Trigger initially if already playing
+        if (!video.paused) {
+          updateColor();
+        }
+      };
+
+      // Handle video playback and custom timing
+      domSlides.forEach((s) => {
+        const video = s.querySelector<HTMLVideoElement>("video");
+        const slideLogical = Number(s.dataset.slideIndex);
+        if (video) {
+          if (slideLogical === idx) {
+            video.currentTime = 0;
+            setupVideoBgSync(video, s);
+            video.play().catch(() => {});
+            paused = true; // Pause auto-advance timer while video plays
+            
+            // Remove old ended listener if any, and add a clean one
+            video.onended = () => {
+              paused = reduced;
+              goTo(idx + 1);
+            };
+          } else {
+            video.pause();
+          }
+        }
+      });
+      };
+
+      const goTo = (logicalIdx: number, smooth = true) => {
+        const clamped = ((logicalIdx % logicalCount) + logicalCount) % logicalCount;
+        let domIdx = logicalToDom(clamped);
+
+        if (hasLoop) {
+          const forward = (clamped - activeIndex + logicalCount) % logicalCount;
+          const backward = (activeIndex - clamped + logicalCount) % logicalCount;
+          if (backward === 1 && activeIndex === 0 && clamped === logicalCount - 1) {
+            domIdx = 0;
+          } else if (forward === 1 && activeIndex === logicalCount - 1 && clamped === 0) {
+            domIdx = domSlides.length - 1;
+          }
+        }
+
+        isUserScrolling = true;
+        scrollToDomIndex(domIdx, smooth);
+
+        if (!smooth || reduced) {
+          isUserScrolling = false;
+          markActive(clamped);
+          wrapLoopIfNeeded();
+          return;
+        }
+
+        const onScrollEnd = () => {
+          isUserScrolling = false;
+          markActive(clamped);
+          wrapLoopIfNeeded();
+          track.removeEventListener("scrollend", onScrollEnd);
+        };
+        if ("onscrollend" in track) {
+          track.addEventListener("scrollend", onScrollEnd, { once: true });
+        } else {
+          setTimeout(() => {
+            isUserScrolling = false;
+            markActive(clamped);
+            wrapLoopIfNeeded();
+          }, 320);
+        }
+      };
+
+      /* Start on first real slide (index 1 when loop clones exist). */
+      if (hasLoop) {
+        scrollToDomIndex(logicalToDom(0), false);
+      }
+      markActive(0);
+
+      const nudgePause = (ms = 8000) => {
+        pauseUntil = performance.now() + ms;
+      };
+
+      /* IntersectionObserver — only commit active slide when scroll is settled
+         or the slide is nearly fully centered (avoids mid-scroll "tweaking"). */
+      if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            if (isUserScrolling) return;
+            let best = { ratio: 0, idx: activeIndex };
+            entries.forEach((e) => {
+              const idx = Number((e.target as HTMLElement).dataset.slideIndex || 0);
+              if (e.intersectionRatio > best.ratio) {
+                best = { ratio: e.intersectionRatio, idx };
+              }
+            });
+            if (best.ratio > 0.88) markActive(best.idx);
+          },
+          { root: track, threshold: [0.5, 0.75, 0.88, 1] }
+        );
+        domSlides.forEach((s) => io.observe(s));
+      }
+
+      /* Arrow buttons */
+      prev?.addEventListener("click", () => {
+        nudgePause();
+        goTo(activeIndex - 1);
+      });
+      next?.addEventListener("click", () => {
+        nudgePause();
+        goTo(activeIndex + 1);
+      });
+
+      /* Dots */
+      dots.forEach((d, i) => {
+        d.addEventListener("click", () => {
+          nudgePause();
+          goTo(i);
+        });
+      });
+
+      /* Hover / focus pause */
+      hero.addEventListener("mouseenter", () => (paused = true));
+      hero.addEventListener("mouseleave", () => (paused = reduced));
+      hero.addEventListener("focusin", () => (paused = true));
+      hero.addEventListener("focusout", () => {
+        if (!hero.contains(document.activeElement)) paused = reduced;
+      });
+
+      /* Keyboard (track focused) */
+      track.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") { e.preventDefault(); nudgePause(); goTo(activeIndex - 1); }
+        if (e.key === "ArrowRight") { e.preventDefault(); nudgePause(); goTo(activeIndex + 1); }
+      });
+
+      /* Pointer drag (desktop) */
+      let isDown = false, startX = 0, startScroll = 0, hasDragged = false;
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType === "touch") return;
+        const target = e.target as HTMLElement;
+        if (target.closest("a,button")) return;
+        isDown = true;
+        hasDragged = false;
+        startX = e.clientX;
+        startScroll = track.scrollLeft;
+        track.classList.add("is-dragging");
+        track.setPointerCapture(e.pointerId);
+        nudgePause(10000);
+      };
+      const onPointerMove = (e: PointerEvent) => {
+        if (!isDown) return;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 3) hasDragged = true;
+        track.scrollLeft = startScroll - dx;
+      };
+      const onPointerUp = (e: PointerEvent) => {
+        if (!isDown) return;
+        isDown = false;
+        track.classList.remove("is-dragging");
+        try { track.releasePointerCapture(e.pointerId); } catch {}
+        goTo(activeIndex);
+        if (hasDragged) {
+          const stop = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); };
+          track.addEventListener("click", stop, { capture: true, once: true });
+        }
+      };
+
+      track.addEventListener("pointerdown", onPointerDown);
+      track.addEventListener("pointermove", onPointerMove);
+      track.addEventListener("pointerup", onPointerUp);
+      track.addEventListener("pointercancel", onPointerUp);
+
+      track.addEventListener("touchstart", () => nudgePause(10000), { passive: true });
+
+      /* Auto-advance */
+      if (autoMs > 0 && !reduced) {
+        const step = () => {
+          if (!paused && performance.now() > pauseUntil && document.visibilityState === "visible") {
+            goTo(activeIndex + 1);
+          }
+        };
+        autoTimer = window.setInterval(step, autoMs);
+      }
+
+      /* Cleanup on page transition */
+      document.addEventListener("astro:before-preparation", () => {
+        if (autoTimer) clearInterval(autoTimer);
+        if (scrollSettleTimer) clearTimeout(scrollSettleTimer);
+        track.removeEventListener("scroll", onTrackScroll);
+      }, { once: true });
+    });
+  }
+
+  const resetAndMountPromoHero = () => {
+    document.querySelectorAll<HTMLElement>(".promo-hero").forEach((hero) => {
+      delete (hero as any).__promoHeroMounted;
+    });
+    mountPromoHero();
+  };
+
+  document.addEventListener("astro:page-load", resetAndMountPromoHero);
+  if (document.readyState !== "loading") resetAndMountPromoHero();
+  else document.addEventListener("DOMContentLoaded", resetAndMountPromoHero);
+</script>

@@ -1,0 +1,58 @@
+/* DA asiatique — Saveurs d'Asie
+   Épuré, précis, espace valorisé. Esthétique japonaise / coréenne.
+   Jamais de lanterne rouge générique.                                          */
+
+[data-rayon="saveurs-asie"] {
+  --rayon-accent:       #C0392B;   /* rouge laqué */
+  --rayon-accent-dark:  #922217;
+  --rayon-accent-2:     #1A1A1A;   /* noir encre */
+  --rayon-accent-3:     #C8A951;   /* or doux */
+  --rayon-fond-section: #FAFAF7;
+  --rayon-fond-hero:    #F5F2EB;
+  --rayon-texte-hero:   #1A1A1A;
+  --rayon-font-deco:    var(--font-display);
+}
+
+[data-rayon="saveurs-asie"] .rayon-hero {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(192, 57, 43, 0.08), transparent 50%),
+    linear-gradient(180deg, #FBF9F4 0%, #F5F2EB 100%);
+  color: var(--rayon-texte-hero);
+}
+
+/* Trame horizontale (encre & papier) + point rouge soleil */
+[data-rayon="saveurs-asie"] .rayon-motif {
+  background-image:
+    repeating-linear-gradient(0deg,
+      transparent 0 28px,
+      rgba(26, 26, 26, 0.06) 28px 29px);
+}
+
+/* Soleil rouge laqué en haut-droite */
+[data-rayon="saveurs-asie"] .rayon-hero::before {
+  content: "";
+  position: absolute;
+  top: 8%; right: 6%;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: var(--rayon-accent);
+  opacity: 0.10;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+[data-rayon="saveurs-asie"] .rayon-badge {
+  background: var(--rayon-accent);
+  color: #FBF9F4;
+}
+
+[data-rayon="saveurs-asie"] .rayon-pill {
+  background: color-mix(in srgb, var(--rayon-accent) 12%, transparent);
+  color: var(--rayon-accent);
+  border: 1px solid color-mix(in srgb, var(--rayon-accent) 22%, transparent);
+}
+
+[data-rayon="saveurs-asie"] h1,
+[data-rayon="saveurs-asie"] h2 {
+  letter-spacing: -0.02em;
+}

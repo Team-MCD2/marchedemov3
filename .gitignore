@@ -1,0 +1,6 @@
+.env*
+.astro/
+.vercel/
+blend_mapping/
+node_modules/
+screenshots/

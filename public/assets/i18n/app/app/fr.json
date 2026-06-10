@@ -1,0 +1,682 @@
+{
+  "navbar": {
+    "step": {
+      "auth": "Authentification",
+      "delivery": "Livraison",
+      "payment": "Paiement",
+      "currentStepSuffix": "(page actuelle)"
+    },
+    "cart": {
+      "title": "Mon panier",
+      "article": "{articleCount} {articleCount, plural, =1 {article} other {articles}}",
+      "navigate": "Accéder au panier",
+      "totalMain": "Total (dont T.V.A)",
+      "totalSub": "hors frais de livraison",
+      "item-added-to-cart": "Produit ajouté au panier",
+      "close-nav-cart": "Continuer mes achats",
+      "cart-empty": "Votre panier est vide !",
+      "cart-unit-price": "Prix Unitaire",
+      "cart-item-added-failed": "Une erreur s'est produite lors de l'ajout au panier. Merci de réessayer"
+    },
+    "account": {
+      "logged": {
+        "title": "Bonjour",
+        "accessAccount": "Accéder à mon compte",
+        "logout": "Me déconnecter",
+        "login": "Me connecter",
+        "links": {
+          "fidelityCard": "Ma carte de fidélité E.Leclerc",
+          "myOrders": "Mes commandes",
+          "myInfos": "Mes informations personnelles",
+          "needHelp": "Besoin d'aide"
+        }
+      },
+      "logout": {
+        "firstVisit": "Première visite ?",
+        "title": "Mon compte",
+        "create-account": "Créer un compte"
+      }
+    },
+    "search": {
+      "drive": {
+        "text": "Vous souhaitez plutôt faire vos courses ?",
+        "scamark_match": "Vous recherchiez &laquo;&nbsp;<b>{searchText}</b>&nbsp;&raquo;&nbsp;?",
+        "link": "Pour vos courses alimentaires, le Drive est par là"
+      },
+      "products": {
+        "title": "Produits"
+      },
+      "categories": {
+        "title": "Suggestions",
+        "result": "{searchText} dans"
+      },
+      "shop": {
+        "title": "Magasins"
+      },
+      "edito": {
+        "title": "Contenus"
+      },
+      "noResults": {
+        "title": "Résultats de recherche",
+        "text": "Désolé, votre recherche n'a produit aucun résultat.",
+        "subText": "Essayez avec d'autres mots clés."
+      },
+      "placeholder": "Que recherchez-vous ?"
+    },
+    "catalogues": "Catalogues",
+    "mobileSearchPlaceholder": "Rechercher sur e.leclerc"
+  },
+  "header-shop": {
+    "schedule-time": "Horaires d'ouverture",
+    "or": "ou",
+    "my-shop": "Mon magasin",
+    "contact": "Tel. {phone}",
+    "open-from": "Ouvert aujourd'hui de {start} à {end}",
+    "and-open-from": "et de {start} à {end}",
+    "currently-opened": "Actuellement ouvert",
+    "currently-closed": "Actuellement fermé",
+    "actions": {
+      "know-more": "En savoir plus",
+      "change-shop": "Changer de magasin",
+      "look-at-shop": "Voir mon magasin",
+      "itinerary": "Itinéraire",
+      "localize": "Me géocaliser",
+      "filter": "Filtrer",
+      "choose": "Choisir ce magasin"
+    }
+  },
+  "sidebar": {
+    "displayAll": "Tout afficher",
+    "seeAll": "Voir tout",
+    "seeAllDepartments": "Tous les rayons"
+  },
+  "obsolete-browser": {
+    "title": "Votre navigateur est obsolète ou n’est pas pris en charge !\n",
+    "content": "Pour une navigation optimale, veuillez le mettre à jour avec une version récente parmi les navigateurs suivants : Google Chrome, Microsoft Edge, Safari.",
+    "button": "J’ai compris"
+  },
+  "parapharmacy-banner": {
+    "text": "Parapharmacie : Livraison offerte en magasin ou dès 35€ d’achat avec la livraison à domicile"
+  },
+  "shared": {
+    "code": {
+      "success": "Votre compte a bien été créé. Un Email vient de vous être envoyé.",
+      "technical": "Une erreur s'est produite, merci de réessayer.",
+      "error1": "Un problème technique est survenu, merci de réessayer ultérieurement",
+      "invalid_request" : {
+        "email": "Veuillez renseigner votre adresse email.",
+        "password": "Veuillez renseigner votre mot de passe."
+      },
+      "rate_limit_reached": "Vous avez effectué trop de tentatives, veuillez réessayer ultérieurement.",
+      "invalid_grant": "Votre mot de passe est incorrect",
+      "access_denied": "Pour des raisons de sécurité, nous vous invitons à modifier votre mot de passe en cliquant sur “Réinitialiser mon mot de passe”.",
+      "reset-password-success": "S'il y a un compte associé à l'adresse email renseignée, vous recevrez un email avec un lien pour réinitialiser votre mot de passe."
+    },
+    "fid": {
+      "edp": {
+        "unavailable": "Vous ne pouvez pas accéder pour l'instant à votre espace digital partagé.",
+        "technical-issue": "Une erreur technique est survenue, vous ne pouvez donc pas accéder à votre espace digital partagé pour l'instant. Merci de re-essayez ultérieurement."
+      },
+      "pdp": {
+        "register": {
+          "success": "Nous vous confirmons votre inscription au programme Vos Avantages Bébé ! Un email de confirmation vous a été envoyé.",
+          "update": "Vos modifications ont bien été enregistrées.",
+          "error": "Un problème technique est survenu, merci de réessayer ultérieurement"
+        },
+        "unregister": {
+          "success": "Nous vous confirmons votre désinscription au programme Vos Avantages Bébé ! Un email de confirmation vous a été envoyé."
+        }
+      },
+      "cards": {
+        "store-confidential-code": {
+          "save-store-error": "Nous n'avons pas pu changer votre magasin de rattachement, merci de réessayer ultérieurement.",
+          "save-store-ok": "Votre choix de magasin a bien été enregistré"
+        }
+      },
+      "vouchers": {
+        "list": {
+          "error": {
+            "none" : "Vos bons de réduction ont bien été transférés sur votre carte E.Leclerc. Retrouvez les dans l'onglet \"Déjà sur ma carte\".",
+            "generic": "Un problème technique est survenu, merci d'essayer ultérieurement.",
+            "unavailable": "Malheureusement, ce bon n'est plus disponible en téléchargement.",
+            "full":  "Vous avez déjà ajouté le nombre maximal du bon sélectionné sur votre carte."
+          }
+        }
+      }
+    },
+    "stimuli": {
+      "guaranteed-low-price": "PRIX BAS GARANTI"
+    },
+    "breadcrumb": {
+      "home": "Accueil"
+    },
+    "reassurance": {
+      "bloc-one": {
+        "text": "Cumulez des Tickets",
+        "bold": "retrait gratuit en magasin"
+      },
+      "bloc-two": {
+        "text": "Des milliers de produits",
+        "bold": "livrés chez vous"
+      },
+      "bloc-three": {
+        "text": "Tous vos produits",
+        "bold": "à prix E.LECLERC"
+      },
+      "bloc-four": {
+        "text": "Paiements",
+        "bold": "100% sécurisés"
+      }
+    },
+    "loader": {
+      "loading": "Chargement..."
+    },
+    "tel": {
+      "bloc": {
+        "title": "Tickets E.Leclerc",
+        "content": "Avec la carte E.Leclerc vous auriez cumulé <b>{number}€</b> en Tickets E.Leclerc sur cette commande.",
+        "content-fid": "Grâce à votre carte vous avez cumulé <b>{number}€</b> en Tickets E.Leclerc sur cette commande*.",
+        "sub-fid": "* Vos Tickets E.Leclerc seront crédités sur votre carte 24h après l'expédition de votre commande"
+      }
+    },
+    "woosmap": {
+      "store": {
+        "locate": "Me géolocaliser",
+        "daysNames": {
+          "Monday": "Lundi",
+          "Tuesday": "Mardi",
+          "Wednesday": "Mercredi",
+          "Thursday": "Jeudi",
+          "Friday": "Vendredi",
+          "Saturday": "Samedi",
+          "Sunday": "Dimanche",
+          "closed": "Fermé"
+        },
+        "open-exceptionally": "Ouverture exceptionnelle le {date}",
+        "to": "{start} à {end}",
+        "and": "et de {start} à {end}",
+        "placeholder": "Adresse, ville…",
+        "loading-map": "Chargement de la carte en cours...",
+        "or": "OU",
+        "no-result": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de votre choix.",
+        "no-result-sav": "Veuillez renseigner un code postal ou utilisez la géolocalisation et sélectionnez une catégorie de produit afin de trouver le point SAV E.Leclerc de votre choix.",
+        "no-result-sav2": "Il n'y a pas de point SAV E.Leclerc proposant cette offre à proximité de votre recherche",
+        "no-result-promotion": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de chez vous proposant cette offre.",
+        "no-postal-code": "Aucun magasin disponible pour ce code postal"
+      }
+    },
+    "pinpad": {
+      "title": "Entrez le code",
+      "validate": {
+        "desktop": "OK",
+        "mobile": "Valider"
+      },
+      "cancel": "Annuler"
+    }
+  },
+  "notFound": {
+    "code": "erreur 404",
+    "title": "oups !",
+    "subTitle": "cette page est indisponible.",
+    "content": "Vous êtes perdu? Pas de panique ...",
+    "action": "Vous allez être redirigé \nsur notre page d'accueil \ndans quelques secondes.",
+    "gotoHome": "Retour à l'accueil"
+  },
+  "goneError": {
+    "code": "erreur 410",
+    "title": "oups !",
+    "subTitle": "cette page n'existe plus.",
+    "content": "Pas de panique ...",
+    "action": "Vous allez être redirigé \nsur notre page d'accueil \ndans quelques secondes.",
+    "gotoHome": "Retour à l'accueil"
+  },
+  "template": {
+    "resultList": {
+      "filter": "Filtrer",
+      "order": "Trier",
+      "sort": {
+        "title": "Trier",
+        "relevance": "Tri par pertinence",
+        "rating": "Tri par note moyenne",
+        "alphaAsc": "De A à Z",
+        "alphaDesc": "De Z à A",
+        "priceAsc": "Prix croissant",
+        "priceDesc": "Prix décroissant"
+      },
+      "subMenus": "Choisir un rayon",
+      "seeMore": "Voir plus de produits"
+    },
+    "menu": {
+      "title": "Menu"
+    },
+    "concept-banner": {
+      "showMore": "Voir plus",
+      "showLess": "Voir moins"
+    },
+    "nrt": {
+      "region-choice": "Choisissez une région",
+      "cancel": "Annuler",
+      "validate": "Valider",
+      "discover-products": "Découvrez nos produits",
+      "title": "Savourez les talents de nos régions en cliquant sur notre carte"
+    }
+  },
+  "components": {
+    "scamark": {
+      "banner": {
+        "first": "Des produits correspondant à cette recherche sont disponibles dans votre E.Leclerc Drive",
+        "second": "Je fais mes courses en ligne"
+      },
+      "list": {
+        "title": "Mais aussi: Produits E.Leclerc Drive à découvrir",
+        "button": "Je fais mes courses sur le Drive"
+      }
+    },
+    "navTree": {
+      "backToTop": "Tous les rayons",
+      "title": "Choisir un rayon",
+      "cancel": "Annuler",
+      "print": "Afficher",
+      "button-label": "Rayons"
+    },
+    "categoryGrid": {
+      "showMore": "Voir plus",
+      "showLess": "Voir moins"
+    },
+    "facets": {
+      "title": "Filtrer",
+      "showMore": "Voir plus",
+      "showLess": "Voir moins",
+      "reset": "Réinitialiser",
+      "erase": "Effacer",
+      "print": "Afficher",
+      "from": "De",
+      "to": "à",
+      "searchBar": "Rechercher..."
+    },
+    "productsList": {
+      "show": "Voir plus"
+    }
+  },
+  "product": {
+    "card": {
+      "telDefaultStimuli": "Ticket E.Leclerc <span class=\"sue-text-danger\">avec la carte</span>",
+      "telDefaultStimuliSeparated1": "Ticket E.Leclerc",
+      "telDefaultStimuliSeparated2": "avec la carte",
+      "soldBy": "Vendu par",
+      "title": "E.Leclerc",
+      "othersOffers": "{nb, plural, =1 {Autre offre} other {Autres offres}} dispo",
+      "from": "dès",
+      "otherOffers": {
+        "usedTitle": "{nb} d'occasion dès",
+        "newTitle": "{nb} {nb, plural, =1 {neuf} other {neufs}} dès"
+      },
+      "ageRecommande": "Âge recommandé : ",
+      "public": "Public : "
+    },
+    "detail": {
+      "stock": {
+        "available": "En stock",
+        "unavailable": "Indisponible",
+        "temporarilyUnavailable": "Momentanément indisponible",
+        "preorder": "En précommande, disponible le {date}",
+        "forthcoming": "A paraître le",
+        "shippedUnder": "Expédié sous {leadtimeToShip} jours"
+      },
+      "price": {
+        "ecopart": "Dont {euro},{cents}€ d'éco part",
+        "per-unit": "à l'unité",
+        "unit" : "l'unité"
+      },
+      "childFoodAdvice1": "En plus du lait, l'eau est la seule boisson indispensable. Bouger, jouer est indispensable au développement de votre enfant. Plus d'infos sur",
+      "childFoodAdvice2": "Apprenez à votre enfant à ne pas grignoter entre les repas. Bouger, jouer est indispensable au développement de votre enfant. Plus d'infos sur",
+      "foodAdviceLink": "https://www.mangerbouger.fr",
+      "foodAdviceLinkLabel": "www.mangerbouger.fr",
+      "reviews": {
+        "title": "Avis clients",
+        "orderBy": {
+          "title" : "Trier",
+          "validate": "Valider",
+          "cancel": "Annuler",
+          "values" : {
+            "relevant" : "Les plus pertinents",
+            "recent" : "Les plus récents",
+            "ascending" : "De la note la plus faible à la plus élevée",
+            "descending" : "De la note la plus élevée à la plus faible"
+          }
+        }
+      }
+    }
+  },
+  "offer": {
+    "discount": {
+      "promo": {
+        "goodDeal": "BON PLAN"
+      },
+      "legalNotice": {
+        "noLimit": "Offre valable dans la limite des pièces disponibles, pour les produits vendus et expédiés par {shopName} et non cumulable avec toute autre remise.",
+        "startEndLimit": "Offre valable du {startDate} au {endDate} dans la limite des pièces disponibles, pour les produits vendus et expédiés par {shopName} et non cumulable avec toute autre remise.",
+        "endLimitOnly": "Offre valable jusqu'au {endDate} dans la limite des pièces disponibles, pour les produits vendus et expédiés par {shopName} et non cumulable avec toute autre remise."
+      }
+    }
+  },
+  "search": {
+    "not-found-title": "Il n'y a aucun résultat pour votre recherche !",
+    "notFound": "Vérifiez l'orthographe des mots saisis ou complétez-les par un nouveau mot clé."
+  },
+  "footer": {
+    "subfooter": {
+      "fraudAlert": "Un problème ? Dites-le nous !",
+      "fraudAlertLink": "En savoir plus"
+    },
+    "surfooter": {
+      "default": "RAPPEL PRODUITS !",
+      "link": "En savoir plus →"
+    }
+  },
+  "content-pages": {
+    "trustmark": {
+      "title": "Label de confiance",
+      "subtitle": "Retrouvez ci-dessous la liste des données et fonctionnalités pouvant être utilisées lors de votre navigation sur le site E.Leclerc.",
+      "bloc-1": {
+        "title": "Accès aux données géographiques",
+        "description": "Le service de localisation permet d'utiliser des informations des réseaux mobiles, Wi-Fi et GPS pour localiser votre emplacement approximatif. Cette localisation est uniquement utilisée pour rechercher un magasin à proximité.",
+        "icon": "locator.svg"
+      },
+      "bloc-2": {
+        "title": "Accès aux fonctions du téléphone",
+        "description": "Le service permet d'utiliser l'appareil photo de votre appareil. Il n'est utilisé que pour effectuer le rattachement de votre Carte de fidélité à votre compte en photographiant son code barre.",
+        "icon": "phone.svg"
+      },
+      "bloc-3": {
+        "title": "Accès aux données liées au profil",
+        "description": "Afin de pouvoir créer ou vous connecter à votre espace personnel, vous devez renseigner votre identifiant et votre mot de passe de compte. Ces informations permettent la création d'un cookie d'authentification. Celui-ci vous permet de ne pas avoir à saisir l'identifiant et le mot de passe à chaque connexion. Vous pouvez le supprimer depuis <a href='/espace-client/mon-compte/newsletter'>le centre de consentement des cookies</a>. Un nouveau cookie sera créé lors de votre prochaine identification.",
+        "icon": "clipboard-user.svg"
+      },
+      "bloc-4": {
+        "title": "Informations du compte",
+        "description": "Dans le cadre de votre identification, nous utilisons votre adresse mail. Ce site accède ensuite aux informations liées à votre compte. Elles sont utilisées pour vos achats sur le site.",
+        "icon": "user.svg"
+      },
+      "bloc-5": {
+        "title": "Historique et préférences",
+        "description": "Notre site collecte des informations concernant vos préférences et l'historique de votre navigation afin de vous proposer des services personnalisés. Cette collecte n'est effectuée que si vous avez donné votre consentement. <a href='/espace-client/mon-compte/newsletter'>Vous pouvez le modifier à tout moment ici.</a>",
+        "icon": "self-timer.svg"
+      },
+      "bloc-6": {
+        "title": "Réseaux sociaux",
+        "description": "Récupération des identifiants dans le cadre de l'authentification au site E.Leclerc ou pour partager des contenus vers les réseaux sociaux.",
+        "icon": "share2.svg"
+      },
+      "bloc-7": {
+        "title": "Publicité",
+        "description": "Le site vous propose via des cookies, des produits et services adaptés à vos centres d'intérêts réels ou supposés. Ces propositions ne sont faites que si vous avez donné votre consentement. <a href='/espace-client/mon-compte/newsletter'>Vous pouvez le modifier à tout moment ici.</a>",
+        "icon": "aim.svg"
+      },
+      "bloc-8": {
+        "title": "Vos consentements",
+        "description": "<strong>Chez E.Leclerc, nous vous demandons deux consentements :</strong> <ul style='margin-left: 15px'> <li>Un consentement pour nous autoriser à vous envoyer des actualités et bonnes affaires </li> <li> Un consentement pour nous autoriser à vous faire bénéficier d’offres personnalisées basées sur votre historique d’achat ou de navigation sur l’un de nos sites.</li></ul>  Vous pouvez à tout moment modifier ces consentements sur votre compte client. ",
+        "icon": "check.svg"
+      }
+    },
+    "trade-game": {
+      "title": "Jeu trade",
+      "eligible-products-list-link": "Retrouvez la liste des produits éligibles au jeu de cette semaine",
+      "eligible-products-list-dates": "(pour les achats effectués la semaine passée)",
+      "rule-link": "Voir le règlement"
+    },
+    "reset-password": {
+      "title": "Ma carte E.Leclerc",
+      "subtitle": "Modifier le code secret de ma carte E.Leclerc (4 chiffres)",
+      "info": "Vous ne devez pas utiliser d'informations personnelles ou un code à 0000 ni une suite logique de chiffres ou de chiffres identiques.",
+      "expired-token": "Vous avez dépassé le délai autorisé, merci de réaliser une nouvelle demande",
+      "success": "Votre code secret a bien été modifié",
+      "error": "Une erreur technique est survenue, merci de réessayer dans quelques instants",
+      "bad-password": "Le nouveau code confidentiel ne respecte pas les règles de sécurité",
+      "form": {
+        "card": "Numéro de carte de fidélité E.Leclerc  *",
+        "card-placeholder": "(13 chiffres)",
+        "new-password": "Saisissez votre nouveau code secret *",
+        "new-password-confirm": "Confirmez votre nouveau code secret *",
+        "mandatory-fields": "* Champs obligatoires",
+        "confirm-button": "Réinitialiser mon code secret",
+        "legal-notice": "Les informations recueillies sur ce formulaire sont enregistrées dans un fichier informatisé par le Centre E.Leclerc de rattachement que vous aurez choisi ou par la société L.Commerce. Cette collecte a pour finalité le traitement de votre adhésion à la Carte de fidélité E.Leclerc. <br><br>\nCes informations sont destinées au Centre E.Leclerc de rattachement que vous aurez choisi ou à la société L.Commerce, ainsi qu'à ses sous-traitants. Dans l'hypothèse où vous communiqueriez votre numéro de Carte de fidélité E.Leclerc à une entité du Mouvement E.Leclerc ou à l'un de ses partenaires, les informations recueillies sur ce formulaire lui seront transmises. <br><br>Elles sont conservées pendant 2 ans après la dernière utilisation de la Carte de fidélité E.Leclerc. <br><br>\nConformément à la loi « informatique et libertés », vous pouvez exercer votre droit d'accès aux données vous concernant et les faire rectifier auprès de votre Centre E.Leclerc de rattachement, ou sur votre espace \"Ma Carte E.Leclerc\" sur le site www.e.leclerc , ou en contactant le Service Consommateurs Allô E.LECLERC accessible au numéro suivant : 09 69 32 42 52 (Numéro Cristal : appel non surtaxé – du lundi au samedi, de 8h30 à 19h et jusqu'à 18h les veilles de jour férié), ou par courrier à l'adresse suivante : Service Consommateurs Allô E.LECLERC, GALEC, BP 30004, 94859 Ivry-sur-Seine. <br><br>\nNous vous informons de l’existence de la liste d'opposition au démarchage téléphonique « Bloctel », sur laquelle vous pouvez vous inscrire ici : <a href='https://conso.bloctel.fr/' target='_blank'>https://conso.bloctel.fr/</a>\n",
+        "badPassword": "Votre code secret est incorrect",
+        "error": "Une erreur technique est survenue, merci de réessayer dans quelques instants",
+        "different-password": "Les 2 codes secrets doivent être identiques",
+        "asc-password": "Les 2 codes secrets ne doivent pas avoir 4 chiffres ascendants",
+        "desc-password": "Les 2 codes secrets ne doivent pas avoir 4 chiffres descendants",
+        "birthdate-password": "Les 2 codes secrets ne peuvent pas correspondre à la date de naissance",
+        "error-required": "Ce champ est requis",
+        "error-card": "Veuillez vérifier le numéro de carte saisi"
+      }
+    }
+  },
+  "ccu": {
+    "information": {
+      "explanation": "Qu’est-ce que le Compte Unique ?",
+      "login": "Identifiez-vous avec votre Compte Client Unique E.Leclerc.",
+      "account-already-exists": "Il semblerait que vous ayez déjà un compte sur une ou plusieurs de nos sites E.Leclerc. Merci de confirmer votre mot de passe unique pour vous connecter à votre Compte Unique.",
+      "password-lost": "La modification de votre mot de passe sera répercutée sur les sites E.Leclerc éligibles au Compte Client unique E.Leclerc.",
+      "password-modification": "La modification de votre mot de passe sera répercutée sur les sites E.Leclerc éligibles au Compte Client unique E.Leclerc.",
+      "address-modification": "La modification de vos coordonnées sera répercutée sur les sites E.Leclerc éligibles au Compte Client unique E.Leclerc.",
+      "email-modification": "La modification de votre Email (utilisé également comme identifiant) sera répercutée sur les sites E.Leclerc éligibles au Compte Client unique E.Leclerc.",
+      "popin": {
+        "title": "Qu’est ce que le Compte Unique E.Leclerc",
+        "content": "Le Compte Unique E.Leclerc est un nouveau service qui vous permet d’accéder avec un seul compte personnel aux sites E.Leclerc indiqués \nci-dessous :",
+        "useful-title": "Plus pratique",
+        "useful-content": "Votre compte unique\nvous donne accès\nà plusieurs sites\nE.Leclerc",
+        "secure-title": "Plus sûr",
+        "secure-content": "Toutes vos données\npersonnelles sont\nrassemblées en\nun seul lieu",
+        "simple-title": "Plus simple",
+        "simple-content": "Un seul identifiant\nnécessaire pour vous\nconnecter à plusieurs\nsites E.Leclerc",
+        "back": "Authentification"
+      }
+    }
+  },
+  "pageSelect": {
+    "pageSize": {
+      "title": "",
+      "30": "30 par page",
+      "60": "60 par page",
+      "90": "90 par page"
+    }
+  },
+  "delivery": {
+    "store": {
+      "or": "ou",
+      "pick-up": "Point de retrait",
+      "choose-store": "Choisir ce magasin",
+      "choose-my-store": "Choisir mon magasin",
+      "my-store": "Mon magasin",
+      "opening-hours": "Horaires d'ouverture",
+      "filter": "Filtrer",
+      "know-more": "En savoir plus",
+      "hide":"Masquer les horaires",
+      "choose": "Choisir",
+      "see": "Voir",
+      "informations": "Infos magasin",
+      "general-informations": "Infos",
+      "opened": "Ouvert",
+      "closed": "Fermé",
+      "name": "E.Leclerc",
+      "mobile": {
+        "list": "Liste",
+        "map": "Carte",
+        "cancel": "Annuler",
+        "choose": "Choisir"
+      },
+      "special": "Ouverture exeptionnelle le {date}",
+      "placeholder": "Adresse, ville…",
+      "no-postal-code": "Il n'y a pas de magasin proposant cette offre à proximité de votre recherche, essayez avec une nouvelle ville...",
+      "no-result": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de votre choix.",
+      "no-result-sav": "Veuillez renseigner un code postal ou utilisez la géolocalisation et sélectionner une catégorie de produit afin de trouver le point SAV E.Leclerc de votre choix.",
+      "no-result-sav2": "Il n'y a pas de point SAV E.Leclerc proposant cette offre à proximité de votre recherche",
+      "no-result-promotion": "Veuillez renseigner un code postal ou utilisez la géolocalisation afin de trouver le magasin E.Leclerc de chez vous proposant cette offre."
+    }
+  },
+  "order": {
+    "delivery": {
+      "recap": {
+        "error": "Des informations obligatoires sont manquantes, veuillez compléter les champs concernés."
+      }
+    },
+    "alcohol-restriction": "Vous n'avez pas l'âge légal requis par la législation pour valider votre panier, celui-ci contenant un produit interdit à la vente aux mineurs",
+    "alcohol-restriction-no-birth-date": "Votre panier contient un produit interdit à la vente aux mineurs. Merci de bien vouloir renseigner votre date de naissance dans la rubrique Mon Compte."
+  },
+  "notifications": {
+    "pdp": {
+      "register-error": "Un problème technique est survenu, merci de réessayer ultérieurement",
+      "register-success": "Nous vous confirmons votre inscription au programme Vos Avantages Bébé ! Un email de confirmation vous a été envoyé.",
+      "register-update": "Vos modifications ont bien été enregistrées."
+    },
+    "fid": {
+      "success": "Votre Programme de Fidélité a bien été rattaché à votre Compte E.Leclerc !",
+      "error": "Vous avez déjà effectué récemment une tentative d’association de carte à votre compte, ou les données fournies sont invalides",
+      "technical-error": "Une erreur technique est survenue, merci de réessayer dans quelques instants",
+      "erroneous-data": "Un problème technique est survenu, merci d'enregistrer à nouveau votre carte E.leclerc",
+      "generic-error": "Un problème technique est survenu, merci d'essayer ultérieurement.",
+      "unauthorized": "L'intégralité des informations de votre carte n'a pas pu être récupérée. Merci de vous reconnecter.",
+      "card-status": {
+        "unknown": "La Carte de Fidélité E.Leclerc rattachée à votre compte n'est pas reconnue et est donc inutilisable. Pensez à la remplacer via votre <a href=\"/espace-client/carte-fidelite/gestion-de-carte\">espace client</a>.",
+        "deleted": "La Carte de Fidélité E.Leclerc rattachée à votre compte est supprimée ou résiliée et est donc inutilisable. Pensez à la remplacer via votre <a href=\"/espace-client/carte-fidelite/gestion-de-carte\">espace client</a>.",
+        "replaced": "La Carte de Fidélité E.Leclerc rattachée à votre compte a été remplacée par une autre carte. Pensez à rattacher votre nouvelle carte dans votre <a href=\"/espace-client/carte-fidelite/gestion-de-carte\">espace client</a>.",
+        "technical": "Une erreur est survenue lors de la récupération de vos données de Carte de Fidélité E.Leclerc. Merci de vous reconnecter ultérieurement.",
+        "not-valid": {
+          "replaced": "La Carte de Fidélité E.Leclerc rattachée à votre compte a été remplacée par une autre carte. Pensez à rattacher votre nouvelle carte ou à en créer une nouvelle dans votre espace client.",
+          "deleted": "La Carte de Fidélité E.Leclerc rattachée à votre compte est supprimée ou résiliée et est donc inutilisable. Pensez à rattacher votre nouvelle carte ou à en créer une nouvelle dans votre espace client.",
+          "unknown": "Une erreur est survenue lors de la récupération de vos données de Carte de Fidélité E.Leclerc. Merci de vous reconnecter ultérieurement."
+        }
+      },
+      "thrown": "Une erreur est survenue, merci de réessayer ultérieurement.",
+      "reset-password": {
+        "expired-token": "Vous avez dépassé le délai autorisé, merci de réaliser une nouvelle demande",
+        "success": "Votre code secret a bien été modifié",
+        "error": "Une erreur technique est survenue, merci de réessayer dans quelques instants",
+        "bad-password": "Le nouveau code confidentiel ne respecte pas les règles de sécurité",
+        "error-captcha": "Captcha invalid"
+      }
+    },
+    "electronic-invoice": {
+      "subscribe-success-notify": "L'inscription au service des tickets de caisse électroniques a bien été effectuée.",
+      "unsubscribe-success-notify": "Votre désinscription du service des tickets de caisse électroniques a été effectuée."
+    },
+    "payment": {
+      "error": "Un problème technique est survenu, merci de réessayer ultérieurement",
+      "validate-default-card": "Votre carte bancaire a bien été ajoutée."
+    },
+    "newsletter": {
+      "success": {
+        "abo": "Votre abonnement a bien été enregistré !",
+        "desabo": "Votre désabonnement a bien été enregistré !"
+      },
+      "error": "Erreur lors de l'enregistrement"
+    },
+    "account": {
+      "update-profile": {
+        "error": "Une erreur est survenue, merci de réitérer votre demande"
+      }
+    },
+    "vouchers": {
+      "error": {
+        "none" : "Vos bons de réduction ont bien été transférés sur votre carte E.Leclerc. Retrouvez les dans l'onglet \"Déjà sur ma carte\".",
+        "generic": "Un problème technique est survenu, merci d'essayer ultérieurement.",
+        "unavailable": "Malheureusement, ce bon n'est plus disponible en téléchargement.",
+        "full":  "Vous avez déjà ajouté le nombre maximal du bon sélectionné sur votre carte."
+      }
+    },
+    "orders": {
+      "bill": "Votre demande de facture a bien été effectuée, rendez-vous dans votre messagerie pour suivre son avancement.",
+      "claim-opened": "Votre demande de retour a bien été prise en compte",
+      "incident-opened": "Un incident a été ouvert.",
+      "incident-closed": "Un incident a été fermé.",
+      "order-cancelled": "Une commande a été annulée",
+      "order-cancel-error-rejected": "L’annulation de la commande ne peut pas être prise en compte. Votre commande est déjà en cours de préparation.",
+      "order-cancel-error": "L'annulation ne peut être effectuée",
+      "order-cancel-success": "Nous avons bien enregistré votre demande",
+      "order-confirm-delivery": "La livraison de votre commande est confirmée.",
+      "order-evaluation": "L'évaluation de la commande a été envoyée.",
+      "error-download-invoice": "Une erreur est survenue en téléchargeant la facture, merci de réessayer dans quelques instants.",
+      "error": "Une erreur technique est survenue, merci de réessayer dans quelques instants.",
+      "error-download-old-invoice": "Une erreur technique a empêché de télécharger la facture{errorMsg}",
+      "claim": {
+        "warning-no-products-selected": "Choissisez au moins un produit / une raison pour faire une réclamation.",
+        "no-attached-file": "Aucun fichier choisi.",
+        "empty-file": "Votre fichier ne peut pas être vide",
+        "file-too-big": "Votre fichier ne doit pas excéder 2 Mega.",
+        "too-many-files": "Vous ne pouvez pas joindre plus de 50 fichiers."
+      },
+      "customer-service": {
+        "error": {
+          "attachment": "Pièce jointe non valide !",
+          "file-too-big": "Votre fichier ne doit pas excéder 2 Mega.",
+          "too-many-files": "Vous ne pouvez pas attacher plus d'un fichier."
+        }
+      },
+      "message": {
+        "file-too-big": "Votre fichier ne doit pas excéder 2 Mega.",
+        "server-error": "Un problème technique est survenu, merci d'essayer ultérieurement",
+        "too-many-files": "Vous ne pouvez pas attacher plus de 50 fichiers."
+      },
+      "code": {
+        "success": "Votre compte a bien été créé. Un Email vient de vous être envoyé.",
+        "technical": "Une erreur s'est produite, merci de réessayer.",
+        "invalid_request" : {
+          "email": "Veuillez renseigner votre adresse email.",
+          "password": "Veuillez renseigner votre mot de passe."
+        },
+        "rate_limit_reached": "Vous avez effectué trop de tentatives, veuillez réessayer ultérieurement.",
+        "invalid_grant": "Votre mot de passe est incorrect",
+        "access_denied": "Pour des raisons de sécurité, nous vous invitons à modifier votre mot de passe en cliquant sur “Réinitialiser mon mot de passe”.",
+        "reset-password-success": "S'il y a un compte associé à l'adresse email renseignée, vous recevrez un email avec un lien pour réinitialiser votre mot de passe."
+      },
+      "auth": {
+        "password": {
+          "invalid": "Format d'email non valide",
+          "error": "Le service est momentanément indisponible, merci de renouveler votre demande ultérieurement."
+        }
+      },
+      "contact": {
+        "types": "Vous pouvez télécharger des fichiers texte, PDF, documents Word, et divers types d'images (.jpg, .gif, .png).",
+        "file-too-big": "Votre fichier ne doit pas excéder 2 Mega.",
+        "too-many-files": "Vous ne pouvez pas attacher plus de 50 fichiers."
+      },
+      "contact-us": {
+        "error": "Une erreur technique est survenue, merci de réessayer dans quelques instants.",
+        "success": "Votre demande de contact a bien été envoyée."
+      },
+      "search": {
+        "not-found": "Il n'y a aucun résultat pour votre recherche ! Vérifiez l'orthographe des mots saisis ou complétez-les par un nouveau mot clé."
+      },
+      "store": {
+        "bad-pwd": "Code secret erroné",
+        "invalid-captcha": "Le captcha est invalide",
+        "save-store-error": "Nous n'avons pas pu changer votre magasin de rattachement, merci de réessayer ultérieurement.",
+        "save-store-ok": "Votre choix de magasin a bien été enregistré"
+      },
+      "bar-code": {
+        "success": "Votre demande a bien été prise en compte, un email vient de vous être envoyé à l'adresse <span class=\"email\">{email}</span>",
+        "error": "Une erreur technique est survenue, merci de réessayer dans quelques instants",
+        "bad-password": "Votre code secret est incorrect",
+        "invalid-captcha": "Le captcha est invalide"
+      }
+    }
+  },
+  "default-shop": {
+    "select-my-shop": "Choisir mon magasin",
+    "default-store-txt": "Vérifier la disponibilité et le prix des produits vendus par votre magasin E.Leclerc",
+    "default-store-txt-mobile": "Vérifier la disponibilité et le prix des produits vendus par votre magasin",
+    "default-store-txt-popin": "Découvrez les catalogues et les produits en stock dans votre magasin",
+    "find-sav": "Trouver un point SAV",
+    "select-pdr": "Choisir un point de retrait",
+    "show-more-pdr": "Afficher plus de points de retrait",
+    "no-result-more": "Aucun résultat trouvé à proximité. Veuillez cliquer sur le bouton pour élargir votre recherche.",
+    "no-result-last-message":"Aucun résultat trouvé à proximité, veuillez faire une nouvelle recherche en modifiant votre localisation.",
+    "no-result-more-btn":"Etendre la recherche",
+    "two-hours": "Retrait magasin 2h",
+    "choose-shop": "Choisir un magasin"
+  },
+  "didomi": {
+    "cookie-config": "Paramétrer les cookies"
+  }
+}

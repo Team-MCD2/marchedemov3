@@ -1,0 +1,9 @@
+---
+import { configV3 } from "@/lib/config-v3";
+import FooterV2 from "./FooterV2.astro";
+import FooterV3 from "./FooterV3.astro";
+
+const props = Astro.props;
+---
+
+{configV3.isV3Active ? <FooterV3 {...props} /> : <FooterV2 {...props} />}
