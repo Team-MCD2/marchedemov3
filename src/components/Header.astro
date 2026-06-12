@@ -1,9 +1,10 @@
 ---
-import { configV3 } from "@/lib/config-v3";
+import { resolveV3 } from "@/lib/config-v3";
 import HeaderV2 from "./HeaderV2.astro";
 import HeaderV3 from "./HeaderV3.astro";
 
 const props = Astro.props;
+const isV3 = resolveV3(Astro.cookies);
 ---
 
-{configV3.isV3Active ? <HeaderV3 {...props} /> : <HeaderV2 {...props} />}
+{isV3 ? <HeaderV3 {...props} /> : <HeaderV2 {...props} />}

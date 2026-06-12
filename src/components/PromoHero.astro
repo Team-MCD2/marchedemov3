@@ -1,9 +1,10 @@
 ---
-import { configV3 } from "@/lib/config-v3";
+import { resolveV3 } from "@/lib/config-v3";
 import PromoHeroV2 from "./PromoHeroV2.astro";
 import PromoHeroV3 from "./PromoHeroV3.astro";
 
 const props = Astro.props;
+const isV3 = resolveV3(Astro.cookies);
 ---
 
-{configV3.isV3Active ? <PromoHeroV3 {...props} /> : <PromoHeroV2 {...props} />}
+{isV3 ? <PromoHeroV3 {...props} /> : <PromoHeroV2 {...props} />}

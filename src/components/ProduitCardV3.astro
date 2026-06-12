@@ -1,59 +1,60 @@
 ---
 /**
  * ProduitCardV3 — Leclerc-style product display card.
- * - Upper section: Brand (uppercase bold) + centered image.
- * - Middle section: Product title + quantity/origin info.
- * - Bottom section: Pricing (Large euros, small centimes exponent) + pill add button.
+ * - Upper section: rayon label (uppercase) + centered image.
+ * - Middle section: product title + origin info.
+ * - Bottom section: "Voir le produit" CTA.
+ *
+ * Doctrine (same as ProduitCardV2) : SANS PRIX. Les produits n'ont pas
+ * de champ prix en base et afficher un prix inventé est une pratique
+ * commerciale trompeuse. Les prix ne vivent que sur les promos (datées).
  */
 import { RAYONS } from "@/lib/site";
-import type { ProduitVedette } from "@/lib/produits-vedettes";
 import { supabaseSrcSet } from "@/lib/image-cdn";
 
+/* Accepts both ProduitVedette (id, image: string) and ProduitPublic
+ * (slug, image: string | null) — the two shapes that feed this card. */
+interface ProduitCardData {
+  id?: string;
+  slug?: string;
+  nom: string;
+  image: string | null;
+  rayon: string;
+  badge?: string | null;
+  origine?: string | null;
+}
+
 interface Props {
-  produit: ProduitVedette;
+  produit: ProduitCardData;
   linkTo?: "produit" | "rayon";
 }
 
 const { produit, linkTo = "produit" } = Astro.props as Props;
-const rayonData = RAYONS[produit.rayon];
+const rayonData = RAYONS[produit.rayon as keyof typeof RAYONS];
 const accent = rayonData?.accent ?? "#1C6B35";
-const productId = produit.id || (produit as any).slug || "";
+const productId = produit.id || produit.slug || "";
 const href = linkTo === "rayon" ? `/rayons/${produit.rayon}` : `/produits/${productId}`;
 
-// 1. Image resolutions
+// Image resolutions
 const { src: produitSrc, srcset: produitSrcset } = supabaseSrcSet(
-  produit.image,
+  produit.image ?? "",
   [400, 600],
   { quality: 72 },
 );
 const produitSizes = "(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 22vw";
 
-// 2. Stable pricing derivation based on product ID to make the storefront look real
-let hash = 0;
-for (let i = 0; i < productId.length; i++) {
-  hash = productId.charCodeAt(i) + ((hash << 5) - hash);
-}
-const seed = Math.abs(hash);
-const basePrice = (seed % 18) + 1.49; // Price between 1.49 and 19.49
-const euros = Math.floor(basePrice);
-const centimes = (seed % 2) === 0 ? "99" : "49";
-const mockPriceVal = parseFloat(`${euros}.${centimes}`);
-const unitPrice = `${(mockPriceVal / 0.5).toFixed(2)} € / kg`;
-
-// 3. Brand derivation
-const words = produit.nom.split(" ");
-const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words[0] : "MARCHÉ DE MO'";
+const rayonLabel = rayonData?.nomCourt ?? produit.rayon;
 ---
 
-<div 
+<div
   class="produit-card group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-neutral-100 hover:border-vert/20 hover:shadow-lg transition-all duration-300 p-4"
   data-culture={produit.rayon.replace("saveurs-", "").replace("saveur-", "")}
 >
   <!-- Card Header Link -->
   <a href={href} class="block flex-1 flex flex-col">
-    <!-- Brand badge -->
-    <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
-      {brand}
+    <!-- Rayon label -->
+    <span class="text-[10px] font-black uppercase tracking-widest block mb-2" style={`color: ${accent}`}>
+      {rayonLabel}
     </span>
 
     <!-- Image wrapper -->
@@ -80,16 +81,16 @@ const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words
             height="40"
             class="w-10 h-10 opacity-15 mb-2"
           />
-          <p class="font-bold text-[11px] leading-tight text-neutral-400 line-clamp-2">
+          <p class="font-bold text-[11px] leading-tight text-neutral-500 line-clamp-2">
             {produit.nom}
           </p>
-          <span class="text-[9px] text-neutral-400 italic mt-1">Photo à venir</span>
+          <span class="text-[9px] text-neutral-500 italic mt-1">Photo à venir</span>
         </div>
       )}
 
       <!-- Cultural icon/badge stamp -->
       {produit.badge && (
-        <span 
+        <span
           class="absolute top-2 left-2 inline-flex items-center px-2 py-0.5 rounded-full bg-white/95 text-[9.5px] font-bold tracking-wide uppercase shadow-sm border border-neutral-100"
           style={`color: ${accent}`}
         >
@@ -104,24 +105,27 @@ const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words
     </h3>
 
     <!-- Department / Origin -->
-    <div class="flex items-center justify-between text-[11px] text-neutral-500 mb-4 font-medium">
+    <div class="flex items-center justify-between text-[11px] text-neutral-600 mb-4 font-medium">
       <span class="flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full" style={`background-color: ${accent}`}></span>
-        {rayonData?.nomCourt ?? produit.rayon}
+        {rayonLabel}
       </span>
       {produit.origine && <span>{produit.origine}</span>}
     </div>
   </a>
 
-  <!-- Card Action Footer (Pricing + Adder) -->
-  <div class="flex items-end justify-between border-t border-neutral-100/80 pt-3">
-    <!-- Pricing -->
-    <div class="text-left leading-none">
-      <div class="text-neutral-900 font-black tracking-tight select-none">
-        <span class="text-[25px] align-middle">{euros}</span>
-        <sup class="text-[13px] font-bold align-super ml-0.5">€,{centimes}</sup>
-      </div>
-      <span class="text-[9.5px] text-neutral-400 block mt-1">{unitPrice}</span>
-    </div>
+  <!-- Card Action Footer (CTA — disponible en magasin) -->
+  <div class="flex items-center justify-between border-t border-neutral-100/80 pt-3">
+    <span class="text-[10.5px] font-bold uppercase tracking-wide text-vert">
+      Disponible en magasin
+    </span>
+    <a
+      href={href}
+      class="inline-flex items-center gap-1 text-[12px] font-bold text-neutral-700 group-hover:text-vert transition-colors"
+      aria-label={`Voir ${produit.nom}`}
+    >
+      Voir
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+    </a>
   </div>
 </div>

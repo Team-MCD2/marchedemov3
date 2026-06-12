@@ -151,8 +151,9 @@ const heroSources = baseSlides.map((s) =>
           return (
             <div class="w-full h-full flex-shrink-0 relative">
               {isVideo ? (
-                <!-- Split Screen Video Layout -->
-                <div class="w-full h-full flex flex-col-reverse md:flex-row bg-vert relative text-white">
+                <!-- Split Screen Video Layout — background color synced to
+                     the playing video via canvas sampling (cf. PromoHeroV2) -->
+                <div data-video-slide class="hero-video-slide w-full h-full flex flex-col-reverse md:flex-row bg-vert relative text-white">
                   <div class="flex-1 p-6 md:p-10 lg:p-14 flex flex-col justify-center z-10">
                     <span class="text-[11px] font-black uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full w-fit mb-3">{slide.eyebrow}</span>
                     <h2 class="font-soft font-bold text-[22px] md:text-[34px] leading-tight text-white mb-2">{slide.titre}</h2>
@@ -253,6 +254,11 @@ const heroSources = baseSlides.map((s) =>
     width: 24px;
     border-radius: 999px;
   }
+  /* Video slide : the JS color-sync updates background-color every frame ;
+     this transition smooths it into a slow premium drift (cf. V2). */
+  .hero-video-slide {
+    transition: background-color 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
 </style>
 
 <script>
@@ -263,7 +269,7 @@ const heroSources = baseSlides.map((s) =>
     const track = document.getElementById("hero-slides-track");
     const prevBtn = document.getElementById("hero-prev-btn");
     const nextBtn = document.getElementById("hero-next-btn");
-    const dots = Array.from(hero.querySelectorAll(".hero-dot"));
+    const dots = Array.from(hero.querySelectorAll<HTMLButtonElement>(".hero-dot"));
     const slideCount = parseInt(hero.dataset.slideCount || "0");
     const autoMs = parseInt(hero.dataset.autoMs || "5000");
 
@@ -271,6 +277,78 @@ const heroSources = baseSlides.map((s) =>
 
     let currentIndex = 0;
     let timer: number | null = null;
+
+    /* ----------------------------------------------------------------
+       Video ↔ background color sync (ported from PromoHeroV2).
+       Samples the playing video into a 1×1 canvas every frame, converts
+       the dominant color to HSL, clamps it to a dark premium tone
+       (L 14%, S 25–45%) and paints the slide background. The CSS
+       transition on .hero-video-slide smooths the changes.
+       ---------------------------------------------------------------- */
+    const setupVideoBgSync = (video: HTMLVideoElement, slideElement: HTMLElement) => {
+      if ((video as any).__bgSyncSetup) return;
+      (video as any).__bgSyncSetup = true;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+
+      let animFrameId: number;
+
+      const updateColor = () => {
+        if (video.paused || video.ended) return;
+        try {
+          ctx.drawImage(video, 0, 0, 1, 1);
+          const pixel = ctx.getImageData(0, 0, 1, 1).data;
+          const rNorm = pixel[0] / 255, gNorm = pixel[1] / 255, bNorm = pixel[2] / 255;
+          const max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
+          let h = 0, s = 0;
+          const l = (max + min) / 2;
+
+          if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+              case rNorm: h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0); break;
+              case gNorm: h = (bNorm - rNorm) / d + 2; break;
+              case bNorm: h = (rNorm - gNorm) / d + 4; break;
+            }
+            h /= 6;
+          }
+
+          const hue = Math.round(h * 360);
+          const targetL = 14; // dark premium background
+          const targetS = Math.min(Math.max(Math.round(s * 100), 25), 45);
+
+          slideElement.style.setProperty("background-color", `hsl(${hue}, ${targetS}%, ${targetL}%)`, "important");
+        } catch (e) {
+          /* canvas read errors (e.g. tainted frame) — skip silently */
+        }
+        animFrameId = requestAnimationFrame(updateColor);
+      };
+
+      video.addEventListener("play", () => updateColor());
+      video.addEventListener("pause", () => cancelAnimationFrame(animFrameId));
+      if (!video.paused) updateColor();
+    };
+
+    /* Play + sync the video of the active slide, pause all others. */
+    const slides = Array.from(track.children) as HTMLElement[];
+    const syncVideos = () => {
+      slides.forEach((slideEl, idx) => {
+        const video = slideEl.querySelector<HTMLVideoElement>("video");
+        if (!video) return;
+        const wrap = slideEl.querySelector<HTMLElement>("[data-video-slide]") ?? slideEl;
+        if (idx === currentIndex) {
+          setupVideoBgSync(video, wrap);
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    };
 
     const updateSlider = (index: number) => {
       currentIndex = (index + slideCount) % slideCount;
@@ -284,6 +362,8 @@ const heroSources = baseSlides.map((s) =>
           dot.removeAttribute("aria-current");
         }
       });
+
+      syncVideos();
     };
 
     const nextSlide = () => updateSlider(currentIndex + 1);
@@ -319,6 +399,7 @@ const heroSources = baseSlides.map((s) =>
     hero.onmouseleave = startAutoPlay;
 
     // Start
+    syncVideos();
     startAutoPlay();
   };
 

@@ -62,13 +62,11 @@ const { src: promoSrc, srcset: promoSrcset } = supabaseSrcSet(
 );
 const promoSizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw";
 
-// 3. Mock unit price for display
-const mockWeight = 0.5; // default 500g
-const unitPrice = `${(pPromo / mockWeight).toFixed(2)} € / kg`;
-
-// 4. Brand extraction
-const words = titre.split(" ");
-const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words[0] : "MARCHÉ DE MO'";
+// 3. Validity date — real data, replaces the old fabricated €/kg unit
+//    price (pas de poids en base → pas de prix au kilo affichable).
+const finLabel = date_fin
+  ? `Jusqu'au ${new Date(date_fin).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`
+  : "";
 ---
 
 <article 
@@ -77,9 +75,9 @@ const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words
 >
   <!-- Card Link Wrap -->
   <a href={href} class="block flex-1 flex flex-col">
-    <!-- Brand -->
-    <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">
-      {brand}
+    <!-- Rayon label -->
+    <span class="text-[10px] font-black uppercase tracking-widest block mb-2" style={`color: ${accent}`}>
+      {rayonNom}
     </span>
 
     <!-- Image + Circular Discount Stamp -->
@@ -131,7 +129,7 @@ const brand = words[0].length > 2 && words[0] === words[0].toUpperCase() ? words
           {origEuros}€,{origCentimes}
         </span>
       </div>
-      <span class="text-[9.5px] text-neutral-400 block mt-1.5">{unitPrice}</span>
+      {finLabel && <span class="text-[9.5px] text-neutral-500 block mt-1.5">{finLabel}</span>}
     </div>
   </div>
 </article>

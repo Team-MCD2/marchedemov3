@@ -1,9 +1,11 @@
 ---
-import { configV3 } from "@/lib/config-v3";
+import { resolveV3 } from "@/lib/config-v3";
 import PromoCardV2 from "./PromoCardV2.astro";
 import PromoCardV3 from "./PromoCardV3.astro";
 
-const props = Astro.props;
+/* Pass-through dispatcher : props are validated by the variant itself. */
+const props = Astro.props as any;
+const isV3 = resolveV3(Astro.cookies);
 ---
 
-{configV3.isV3Active ? <PromoCardV3 {...props} /> : <PromoCardV2 {...props} />}
+{isV3 ? <PromoCardV3 {...props} /> : <PromoCardV2 {...props} />}

@@ -18,9 +18,15 @@ import { SITE } from "@/lib/site";
 import { faqSchema } from "@/lib/schema";
 import type { FAQItem } from "@/lib/faqs";
 import { DEFAULT_STORE } from "@/lib/geo";
-import { configV3 } from "@/lib/config-v3";
+import { resolveV3 } from "@/lib/config-v3";
 
 const currentStore = DEFAULT_STORE;
+const isV3 = resolveV3(Astro.cookies);
+/* Floating V2/V3 comparison toggle. Visible by default so you can compare
+   the two storefronts; set PUBLIC_STOREFRONT_TOGGLE="off" in the env to
+   hide it in production. */
+const showStorefrontToggle =
+  import.meta.env.PUBLIC_STOREFRONT_TOGGLE !== "off";
 
 interface Props {
   /** Page title (used as <title> and og:title). */
@@ -214,7 +220,7 @@ const schemas = Array.isArray(schema) ? schema : schema ? [schema] : [];
 
     {!hideChrome && (
       <>
-        {configV3.isV3Active ? <HeaderV3 /> : <HeaderV2 />}
+        {isV3 ? <HeaderV3 /> : <HeaderV2 />}
       </>
     )}
 
@@ -224,7 +230,7 @@ const schemas = Array.isArray(schema) ? schema : schema ? [schema] : [];
 
     {!hideChrome && (
       <>
-        {configV3.isV3Active ? <FooterV3 /> : <FooterV2 />}
+        {isV3 ? <FooterV3 /> : <FooterV2 />}
       </>
     )}
 
@@ -237,6 +243,63 @@ const schemas = Array.isArray(schema) ? schema : schema ? [schema] : [];
     )}
 
     {!hideChrome && <FeedbackPopup />}
+
+    {/* ============================================================
+        V2 / V3 STOREFRONT COMPARISON TOGGLE (preview tool)
+        Sets the `mdm_storefront` cookie and reloads so you can flip
+        between the two storefront designs. Only honored on
+        server-rendered pages (homepage, etc.). Hide in prod with
+        PUBLIC_STOREFRONT_TOGGLE="off".
+        ============================================================ */}
+    {showStorefrontToggle && (
+      <div
+        id="storefront-toggle"
+        class="fixed bottom-4 left-4 z-[200] flex items-center gap-1 rounded-full bg-noir/90 backdrop-blur px-1.5 py-1.5 shadow-2xl ring-1 ring-white/15 text-white font-pro select-none"
+        data-active={isV3 ? "v3" : "v2"}
+        aria-label="Basculer entre les designs V2 et V3"
+      >
+        <span class="px-2 text-[10px] font-bold uppercase tracking-wider text-white/50">Design</span>
+        <button
+          type="button"
+          data-storefront="v2"
+          class="storefront-opt px-3 py-1 rounded-full text-[12px] font-bold transition-colors"
+        >V2</button>
+        <button
+          type="button"
+          data-storefront="v3"
+          class="storefront-opt px-3 py-1 rounded-full text-[12px] font-bold transition-colors"
+        >V3</button>
+      </div>
+
+      <style is:inline>
+        #storefront-toggle .storefront-opt { color: rgba(255,255,255,0.65); }
+        #storefront-toggle[data-active="v2"] .storefront-opt[data-storefront="v2"],
+        #storefront-toggle[data-active="v3"] .storefront-opt[data-storefront="v3"] {
+          background: #1C6B35; color: #fff;
+        }
+      </style>
+
+      <script is:inline>
+        (function () {
+          function init() {
+            var root = document.getElementById("storefront-toggle");
+            if (!root || root.dataset.bound) return;
+            root.dataset.bound = "1";
+            root.querySelectorAll(".storefront-opt").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var choice = btn.getAttribute("data-storefront");
+                if (root.getAttribute("data-active") === choice) return;
+                document.cookie =
+                  "mdm_storefront=" + choice + ";path=/;max-age=31536000;samesite=lax";
+                location.reload();
+              });
+            });
+          }
+          document.addEventListener("astro:page-load", init);
+          init();
+        })();
+      </script>
+    )}
 
     <script is:inline>
       /*

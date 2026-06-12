@@ -1,0 +1,134 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Stats from "@components/Stats.astro";
+import { SITE, ENGAGEMENTS } from "@/lib/site";
+---
+
+<Layout
+  title="À Propos — Marché de Mo' | Notre Histoire"
+  description="Découvrez l'histoire de Marché de Mo', le plus grand supermarché ethnique d'Occitanie fondé par Samir Ouaddaha."
+>
+  {/* ====================== HERO ====================== */}
+  <section class="relative overflow-hidden bg-gradient-to-br from-noir via-noir to-vert-dark text-white py-20 md:py-28 text-left">
+    <div class="absolute inset-0 opacity-[0.04] pointer-events-none">
+      <img src="/logos/favicon-marchedemo-contourwh.png" alt="" class="absolute right-[-5%] top-[-10%] w-[50%] h-auto" />
+    </div>
+    <div class="container-mo relative z-10">
+      <div class="max-w-3xl">
+        <span class="eyebrow !text-vert-light">Notre enseigne</span>
+        <h1 class="display-xl mt-4 text-balance !text-white">
+          Qui est <span class="text-vert-light">Mo'</span> ?
+        </h1>
+        <p class="mt-6 text-[18px] md:text-[20px] text-white/80 leading-relaxed max-w-2xl">
+          L'histoire d'un patriarche, d'un fils, et d'un rêve devenu le plus grand supermarché ethnique d'Occitanie.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ====================== L'HISTOIRE ====================== */}
+  <section class="section bg-white py-16 md:py-20">
+    <div class="container-mo">
+      <div class="grid lg:grid-cols-12 gap-12 items-center">
+        <div class="lg:col-span-7 text-left">
+          <span class="eyebrow">L'histoire</span>
+          <h2 class="display-lg mt-4 text-balance">
+            De Mohammed à <span class="text-vert">Marché de Mo'</span>.
+          </h2>
+          <div class="mt-8 space-y-6 text-[15px] md:text-[16px] text-neutral-700 leading-relaxed">
+            <p>
+              <strong class="text-noir">Mo'</strong>, c'est le surnom affectueux de <strong class="text-noir">Mohammed</strong>, patriarche de la famille Ouaddaha. Arrivé en France dans les années 1970, Mohammed a toujours rêvé d'un lieu où toutes les communautés pourraient retrouver les saveurs de leur pays d'origine.
+            </p>
+            <p>
+              Son fils <strong class="text-noir">Samir Ouaddaha</strong>, entrepreneur toulousain et lauréat du <strong class="text-vert">Réseau Entreprendre Occitanie</strong>, a transformé ce rêve familial en réalité commerciale en ouvrant les portes du <em>Marché de Mo'</em> à Toulouse Sud — Cépière, fort de près de 60 ans de savoir-faire familial transmis sur trois générations.
+            </p>
+            <p>
+              Aujourd'hui, Marché de Mo' emploie <strong class="text-noir">24 salariés</strong>, dont <strong class="text-rouge">90% n'avaient pas d'emploi</strong> avant leur embauche. Plus qu'un supermarché, c'est un projet social, culturel et humain ancré dans le tissu toulousain.
+            </p>
+            <p>
+              Avec plus de <strong class="text-noir">20 000 références</strong> issues des cinq continents, une <strong>boucherie halal</strong> artisanale, et un engagement fort pour le commerce éthique, Marché de Mo' incarne une nouvelle vision du supermarché : celle d'un lieu de vie, de rencontre et de découverte.
+            </p>
+          </div>
+
+          <div class="mt-10 flex flex-wrap gap-4">
+            <a href="/rayons" class="btn btn-primary font-bold">
+              Voir les 12 rayons
+              <svg class="w-4 h-4 ml-1 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+            </a>
+            <a href="/franchise" class="btn btn-secondary font-bold">
+              Devenir franchisé
+            </a>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="relative">
+            <div class="w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden shadow-2xl ring-4 ring-vert/20 bg-neutral-100">
+              <img
+                src="/logos/logo-marchedemo-rond-contourgreen.png"
+                alt="Marché de Mo' — Fondé par la famille Ouaddaha"
+                class="w-full h-full object-contain p-6"
+                loading="lazy"
+              />
+            </div>
+            <div class="absolute -bottom-4 -right-4 bg-vert text-white px-5 py-2.5 rounded-full font-soft font-bold text-[13px] shadow-lg">
+              60 ans d'expérience
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ====================== CHIFFRES CLÉS ====================== */}
+  <Stats variant="light" />
+
+  {/* ====================== NOS ENGAGEMENTS ====================== */}
+  <section class="section bg-white py-14 border-b border-neutral-100">
+    <div class="container-mo">
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <span class="eyebrow !justify-center">Nos 4 engagements</span>
+        <h2 class="display-lg mt-4 text-balance text-neutral-900">
+          Un supermarché, oui.<br/>
+          <span class="text-rouge">Un engagement</span>, surtout.
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+        {ENGAGEMENTS.map((e) => (
+          <article
+            class="bg-white rounded-3xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 text-left"
+          >
+            <div class="w-14 h-14 rounded-2xl bg-vert/10 text-vert flex items-center justify-center mb-6">
+              {e.icone === "heart" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              )}
+              {e.icone === "people" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              )}
+              {e.icone === "trophy" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+                </svg>
+              )}
+              {e.icone === "care" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  <path d="M12 7v4M9 9h6"/>
+                </svg>
+              )}
+            </div>
+            <h3 class="font-soft font-bold text-[18px] leading-tight text-neutral-900">{e.titre}</h3>
+            <p class="mt-3 text-[13.5px] text-neutral-500 font-pro leading-relaxed">{e.resume}</p>
+            <p class="mt-4 text-[13.5px] text-neutral-600 leading-relaxed">{e.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

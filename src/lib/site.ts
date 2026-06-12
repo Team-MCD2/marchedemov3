@@ -19,7 +19,11 @@ export const SITE = {
   rcs: "RCS Toulouse",
   siege: "6 Place Wilson, 31000 Toulouse, France",
   dirigeant: "Samir Ouaddaha",
-  foundedYear: 2024,
+  /* Savoir-faire familial sur 3 générations : ~60 ans d'expérience.
+     On ne communique JAMAIS une année d'ouverture (2024) comme date de
+     fondation — la marque s'appuie sur l'héritage familial, pas sur la
+     date d'immatriculation du magasin actuel. */
+  experienceYears: 60,
   agence: {
     nom: "Microdidact",
     url: "https://microdidact.com/",

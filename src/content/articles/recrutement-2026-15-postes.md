@@ -8,7 +8,7 @@ date_publication: 2026-03-25
 actif: true
 ---
 
-Depuis notre ouverture en 2024, notre philosophie de recrutement
+Depuis notre ouverture, notre philosophie de recrutement
 n'a pas changé : **pas de CV formel demandé, pas de diplôme minimum, pas de
 limite d'âge**. Ce qui compte pour nous : la **motivation**, le **contact
 client**, et l'envie d'apprendre un métier.

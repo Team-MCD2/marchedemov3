@@ -1,6 +1,20 @@
 /* Global styles — Marché de Mo' V2 */
 @import "./tokens.css";
 
+/* DA tokens per rayon — activated via body[data-rayon="..."] */
+/* 5 culturels (hero dark + motif typé) */
+@import "./rayons/saveurs-afrique.css";
+@import "./rayons/saveurs-asie.css";
+@import "./rayons/saveur-mediterranee.css";
+@import "./rayons/saveur-sud-amer.css";
+@import "./rayons/balkans-turques.css";
+/* 5 non-culturels (hero clair teinté + motif discret) */
+@import "./rayons/boucherie-halal.css";
+@import "./rayons/fruits-legumes.css";
+@import "./rayons/epices-du-monde.css";
+@import "./rayons/produits-courants.css";
+@import "./rayons/surgeles.css";
+
 /* Roboto @font-face declarations for local files */
 @font-face {
   font-family: 'Roboto';
@@ -42,20 +56,6 @@
        url('/assets/fonts/roboto/roboto-v27-latin-ext_latin-900.woff') format('woff');
 }
 
-
-/* DA tokens per rayon — activated via body[data-rayon="..."] */
-/* 5 culturels (hero dark + motif typé) */
-@import "./rayons/saveurs-afrique.css";
-@import "./rayons/saveurs-asie.css";
-@import "./rayons/saveur-mediterranee.css";
-@import "./rayons/saveur-sud-amer.css";
-@import "./rayons/balkans-turques.css";
-/* 5 non-culturels (hero clair teinté + motif discret) */
-@import "./rayons/boucherie-halal.css";
-@import "./rayons/fruits-legumes.css";
-@import "./rayons/epices-du-monde.css";
-@import "./rayons/produits-courants.css";
-@import "./rayons/surgeles.css";
 
 @tailwind base;
 @tailwind components;

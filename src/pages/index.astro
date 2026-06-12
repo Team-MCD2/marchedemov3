@@ -1,9 +1,11 @@
 ---
 export const prerender = false;
 
-import { configV3 } from "../lib/config-v3";
+import { resolveV3 } from "../lib/config-v3";
 import IndexV2 from "./indexV2.astro";
 import IndexV3 from "./indexV3.astro";
+
+const isV3 = resolveV3(Astro.cookies);
 ---
 
-{configV3.isV3Active ? <IndexV3 /> : <IndexV2 />}
+{isV3 ? <IndexV3 /> : <IndexV2 />}

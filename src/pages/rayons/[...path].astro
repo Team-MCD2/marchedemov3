@@ -1145,6 +1145,40 @@ const pageDesc = (() => {
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
+  /* Hero text legibility — text-shadow for all themes */
+  .rayon-hero--dark .rayon-title,
+  .rayon-hero--dark .rayon-tagline {
+    text-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .rayon-hero--dark .rayon-lead {
+    text-shadow: 0 1px 6px rgba(0,0,0,0.3);
+  }
+  .rayon-hero--dark .rayon-eyebrow {
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .rayon-hero--light .rayon-title {
+    text-shadow: 0 1px 4px rgba(255,255,255,0.5);
+  }
+
+  /* Glass card behind hero text for guaranteed legibility */
+  .rayon-hero--dark .container-mo > div:first-child {
+    background: rgba(0,0,0,0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 28px 32px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .rayon-hero--compact.rayon-hero--dark .container-mo > div:first-child {
+    padding: 20px 24px;
+  }
+  @media (max-width: 1023px) {
+    .rayon-hero--dark .container-mo > div:first-child {
+      padding: 20px;
+      border-radius: 20px;
+    }
+  }
+
   /* ============================================================
      Hero section-BG cultural DA — boss's directive : "tu doit
      copier la disgin / suivre la même DA".
@@ -1421,8 +1455,8 @@ const pageDesc = (() => {
     background:
       linear-gradient(
         100deg,
-        color-mix(in srgb, var(--culture-from, #1C6B35) 60%, transparent) 0%,
-        color-mix(in srgb, var(--culture-from, #1C6B35) 35%, transparent) 35%,
+        color-mix(in srgb, var(--culture-from, #1C6B35) 72%, transparent) 0%,
+        color-mix(in srgb, var(--culture-from, #1C6B35) 48%, transparent) 35%,
         transparent 65%,
         transparent 100%
       );
@@ -1436,8 +1470,8 @@ const pageDesc = (() => {
       background:
         linear-gradient(
           180deg,
-          color-mix(in srgb, var(--culture-from, #1C6B35) 50%, transparent) 0%,
-          color-mix(in srgb, var(--culture-from, #1C6B35) 28%, transparent) 60%,
+          color-mix(in srgb, var(--culture-from, #1C6B35) 62%, transparent) 0%,
+          color-mix(in srgb, var(--culture-from, #1C6B35) 40%, transparent) 60%,
           transparent 100%
         );
     }

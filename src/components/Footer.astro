@@ -1,9 +1,10 @@
 ---
-import { configV3 } from "@/lib/config-v3";
+import { resolveV3 } from "@/lib/config-v3";
 import FooterV2 from "./FooterV2.astro";
 import FooterV3 from "./FooterV3.astro";
 
 const props = Astro.props;
+const isV3 = resolveV3(Astro.cookies);
 ---
 
-{configV3.isV3Active ? <FooterV3 {...props} /> : <FooterV2 {...props} />}
+{isV3 ? <FooterV3 {...props} /> : <FooterV2 {...props} />}

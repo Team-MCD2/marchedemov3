@@ -18,25 +18,14 @@ import { RAYONS_LIST, ENGAGEMENTS, MAGASINS, SITE } from "@/lib/site";
 import { getRecettesVedettes } from "@/lib/recettes";
 import { FAQ_HOME } from "@/lib/faqs";
 import { organizationSchema, websiteSchema, allMagasinsSchema, offerSchema } from "@/lib/schema";
+import FeedbackPopup from "@components/FeedbackPopup.astro";
+import KineticMarquee from "@components/KineticMarquee.astro";
 import { getActivePromos } from "@/lib/promos-repo";
 import { getProduitsVedettes, getProduitsByRayon } from "@/lib/produits-repo";
-import { getHomeEditorialSlides, getHomeSeoSettings } from "@/lib/home-content";
+import { getHomeEditorialSlides, getHomeSeoSettings, getHomeMarqueeItems } from "@/lib/home-content";
 
-// Accent colors matching V2 rayons for dots/tags
-const CATEGORY_ACCENTS: Record<string, string> = {
-  "boucherie-halal": "#8B1919",
-  "fruits-legumes": "#2E8B4A",
-  "epices-du-monde": "#A86B1E",
-  "saveurs-afrique": "#C8751A",
-  "saveurs-asie": "#1E5F74",
-  "saveur-mediterranee": "#0F52BA",
-  "saveur-sud-amer": "#B22222",
-  "balkans-turques": "#D2691E",
-  "produits-courants": "#4A5568",
-  "surgeles": "#00A86B",
-};
-
-
+// Cultural accents now come from [data-culture] tokens in
+// rayons/cultural-palettes.css — no local accent map needed.
 // 1. Fetch promotional, editorial, and SEO configurations
 const allPromos = await getActivePromos();
 const featuredPromo =
@@ -46,26 +35,43 @@ const featuredPromo =
 const promosHome = allPromos.slice(0, 6);
 const promosHero = allPromos.filter((p) => p.data.mise_en_avant).slice(0, 4);
 
+/* "Immanquable de la semaine" — pick a highlighted promo distinct from the
+   ticker's featuredPromo when possible, so the homepage shows variety. */
+const immanquablePromo =
+  allPromos.find((p) => p.data.mise_en_avant && p !== featuredPromo) ?? featuredPromo;
+const [immEuros, immCents] = immanquablePromo
+  ? immanquablePromo.data.prix_promo.toFixed(2).split(".")
+  : ["", ""];
+
+/* Catalogue cards — the next two active promos not already in the banner. */
+const cataloguePromos = allPromos.filter((p) => p !== immanquablePromo).slice(0, 2);
+
+const fmtDateFr = (d: string | Date) =>
+  new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+
 const heroEditorialSlides: ExtraSlide[] = await getHomeEditorialSlides();
 const seoSettings = await getHomeSeoSettings();
 const actus = await getActus(12);
 const videos = (await getCollection("videos", (v) => v.data.actif && v.data.rayon === "home"))
   .sort((a, b) => a.data.ordre - b.data.ordre);
 
+const marqueeItems = await getHomeMarqueeItems();
+const recettesVedettes = await getRecettesVedettes(3);
+
 // 2. Fetch products for the 5 cultural sections
-const maghrebProducts = (await getProduitsByRayon("saveur-mediterranee")).slice(0, 4);
-const asieProducts = (await getProduitsByRayon("saveurs-asie")).slice(0, 4);
-const creoleProducts = (await getProduitsByRayon("saveurs-afrique")).slice(0, 4);
-const indeProducts = (await getProduitsByRayon("epices-du-monde")).slice(0, 4);
+const maghrebProducts = (await getProduitsByRayon("saveur-mediterranee")).slice(0, 8);
+const asieProducts = (await getProduitsByRayon("saveurs-asie")).slice(0, 8);
+const creoleProducts = (await getProduitsByRayon("saveurs-afrique")).slice(0, 8);
+const indeProducts = (await getProduitsByRayon("epices-du-monde")).slice(0, 8);
 
 // Italie doesn't have its own rayon, so we filter Mediterranean products for Italian origins, fallback to others
 const allMediterranee = await getProduitsByRayon("saveur-mediterranee");
-const italieProducts = allMediterranee.filter(p => p.origine === "Italie" || p.nom.toLowerCase().includes("italie") || p.nom.toLowerCase().includes("pesto") || p.nom.toLowerCase().includes("pasta")).slice(0, 4);
-if (italieProducts.length < 4) {
+const italieProducts = allMediterranee.filter(p => p.origine === "Italie" || p.nom.toLowerCase().includes("italie") || p.nom.toLowerCase().includes("pesto") || p.nom.toLowerCase().includes("pasta")).slice(0, 8);
+if (italieProducts.length < 8) {
   const maghrebSlugs = new Set(maghrebProducts.map(p => p.slug));
   const remainingMed = allMediterranee.filter(p => !maghrebSlugs.has(p.slug));
   for (const p of remainingMed) {
-    if (italieProducts.length >= 4) break;
+    if (italieProducts.length >= 8) break;
     if (!italieProducts.find(ip => ip.slug === p.slug)) {
       italieProducts.push(p);
     }
@@ -221,38 +227,42 @@ const schemas = [
         </a>
       </div>
 
-      <!-- Long horizontal Trampoline Woodsun equivalent promo banner -->
-      <a href="/promos" class="group relative block w-full rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all bg-vert/5 border border-vert/10">
-        <div class="flex flex-col md:flex-row items-center justify-between p-6 md:p-8 gap-6">
-          <div class="flex items-center gap-5">
-            <!-- Promo Icon Badge -->
-            <div class="w-16 h-16 rounded-full bg-rouge text-white flex flex-col items-center justify-center font-black select-none flex-shrink-0 border-2 border-white shadow">
-              <span class="text-[16px] leading-none">-40%</span>
+      <!-- Long horizontal promo banner — driven by the highlighted promo -->
+      {immanquablePromo && (
+        <a href="/promos" class="group relative block w-full rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all bg-vert/5 border border-vert/10">
+          <div class="flex flex-col md:flex-row items-center justify-between p-6 md:p-8 gap-6">
+            <div class="flex items-center gap-5">
+              <!-- Promo Icon Badge -->
+              <div class="w-16 h-16 rounded-full bg-rouge text-white flex flex-col items-center justify-center font-black select-none flex-shrink-0 border-2 border-white shadow">
+                <span class="text-[16px] leading-none">-{immanquablePromo.data.reduction_pct}%</span>
+              </div>
+              <div class="text-left">
+                <span class="text-[11px] font-black text-rouge uppercase tracking-wider block mb-1">Immanquable de la semaine</span>
+                <h3 class="font-soft font-bold text-[20px] md:text-[24px] text-neutral-900 leading-tight">{immanquablePromo.data.titre}</h3>
+                {immanquablePromo.data.description && (
+                  <p class="text-[13.5px] text-neutral-600 mt-1 max-w-xl">{immanquablePromo.data.description}</p>
+                )}
+              </div>
             </div>
-            <div class="text-left">
-              <span class="text-[11px] font-black text-rouge uppercase tracking-wider block mb-1">Immanquable de la semaine</span>
-              <h3 class="font-soft font-bold text-[20px] md:text-[24px] text-neutral-900 leading-tight">Agneau entier cost-price Aïd el Kebir</h3>
-              <p class="text-[13.5px] text-neutral-600 mt-1 max-w-xl">Disponible en commande exclusive pour vos fêtes de famille, découpé par nos artisans.</p>
+
+            <div class="flex items-center gap-4 flex-shrink-0">
+              <div class="text-right select-none leading-none pr-4 border-r border-neutral-200">
+                <span class="text-[32px] font-black text-rouge align-middle">{immEuros}</span>
+                <sup class="text-[15px] font-bold text-rouge align-super ml-0.5">€,{immCents}</sup>
+                <span class="text-[10px] text-neutral-500 block mt-1.5">au lieu de {immanquablePromo.data.prix_original.toFixed(2).replace(".", ",")} €</span>
+              </div>
+              <span class="btn btn-rouge font-bold text-[13.5px] px-6 py-2.5 rounded-full group-hover:bg-rouge-dark transition-all">
+                Voir la promo
+              </span>
             </div>
           </div>
-          
-          <div class="flex items-center gap-4 flex-shrink-0">
-            <div class="text-right select-none leading-none pr-4 border-r border-neutral-200">
-              <span class="text-[32px] font-black text-rouge align-middle">290</span>
-              <sup class="text-[15px] font-bold text-rouge align-super ml-0.5">€,00</sup>
-              <span class="text-[10px] text-neutral-400 block mt-1.5">L'unité complète</span>
-            </div>
-            <span class="btn btn-rouge font-bold text-[13.5px] px-6 py-2.5 rounded-full group-hover:bg-rouge-dark transition-all">
-              Commander
-            </span>
-          </div>
-        </div>
-      </a>
+        </a>
+      )}
     </div>
   </section>
 
   {/* ====================== 5 · ACHETER PAR RAYON (Leclerc Replica Section 4) ====================== */}
-  <section class="section bg-white border-b border-neutral-100 py-12 hidden lg:block">
+  <section class="section bg-white border-b border-neutral-100 py-12">
     <div class="container-mo">
       <div class="mb-8 select-none text-left">
         <h2 class="font-soft font-black text-[22px] md:text-[26px] text-neutral-900 tracking-tight">
@@ -261,11 +271,11 @@ const schemas = [
       </div>
 
       <!-- Circular visual buttons for Mo's 10 departments -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-4 md:gap-5 justify-items-center">
+      <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 md:gap-5 pb-4 scrollbar-hide sm:grid sm:grid-cols-5 lg:grid-cols-10 sm:overflow-visible sm:snap-none sm:pb-0 justify-items-center">
         {RAYONS_LIST.map((r) => {
           const rayonImg = `/images/rayons/${r.slug}.jpg`;
           return (
-            <a href={`/rayons/${r.slug}`} class="group flex flex-col items-center text-center w-full max-w-[100px]">
+            <a href={`/rayons/${r.slug}`} class="group flex flex-col items-center text-center w-full max-w-[100px] snap-start shrink-0">
               <!-- Circular masked image frame -->
               <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-neutral-50 shadow-sm border border-neutral-200/50 group-hover:border-vert/30 group-hover:shadow-md transition-all duration-300 relative flex items-center justify-center mb-2">
                 <img 
@@ -284,9 +294,11 @@ const schemas = [
     </div>
   </section>
 
+  <KineticMarquee items={marqueeItems} variant="noir" />
+
   {/* Intermediate Logo signature area 1 (Break after rayons) */}
   <div
-    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
+    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
     style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
   >
     <div class="group relative block shrink-0">
@@ -311,66 +323,77 @@ const schemas = [
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Catalogue 1 -->
-        <div class="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/50 flex gap-4">
-          <div class="w-24 h-32 bg-rouge/10 rounded-lg shadow border border-neutral-200 flex-shrink-0 overflow-hidden relative group">
-            <img src="/promos/promo_rectangulaire.webp" alt="Prospectus" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            <div class="absolute inset-0 bg-black/10"></div>
-          </div>
-          <div class="flex flex-col justify-between text-left">
-            <div>
-              <span class="text-[9.5px] font-black uppercase text-rouge bg-rouge/10 px-2 py-0.5 rounded">Prospectus</span>
-              <h3 class="font-bold text-[14.5px] text-neutral-900 mt-2 leading-tight">Le plein de saveurs de l'Aïd</h3>
-              <p class="text-[12px] text-neutral-500 mt-1">Du 1er au 14 juin. Promotions majeures sur la boucherie et l'épicerie fine.</p>
+        <!-- Catalogue cards — next active promos (admin-driven) -->
+        {cataloguePromos.map((p, i) => (
+          <div class="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/50 flex gap-4">
+            <div class={`w-24 h-32 ${i === 0 ? "bg-rouge/10" : "bg-vert/10"} rounded-lg shadow border border-neutral-200 flex-shrink-0 overflow-hidden relative group`}>
+              <img
+                src={p.data.image || `/images/rayons/${p.data.rayon}.jpg`}
+                alt={p.data.titre}
+                loading="lazy"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute inset-0 bg-black/10"></div>
             </div>
-            <a href="/promos" class="text-[12.5px] font-bold text-vert hover:underline flex items-center gap-1">Consulter le catalogue →</a>
-          </div>
-        </div>
-
-        <!-- Catalogue 2 -->
-        <div class="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/50 flex gap-4">
-          <div class="w-24 h-32 bg-vert/10 rounded-lg shadow border border-neutral-200 flex-shrink-0 overflow-hidden relative group">
-            <img src="/images/rayons/epices-du-monde.jpg" alt="Catalogue Épices" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            <div class="absolute inset-0 bg-black/10"></div>
-          </div>
-          <div class="flex flex-col justify-between text-left">
-            <div>
-              <span class="text-[9.5px] font-black uppercase text-vert bg-vert/10 px-2 py-0.5 rounded">Arrivage</span>
-              <h3 class="font-bold text-[14.5px] text-neutral-900 mt-2 leading-tight">Épices &amp; Douceurs d'Orient</h3>
-              <p class="text-[12px] text-neutral-500 mt-1">Nouveautés en direct. Huiles précieuses et spécialités de saison.</p>
+            <div class="flex flex-col justify-between text-left">
+              <div>
+                <span class={`text-[9.5px] font-black uppercase ${i === 0 ? "text-rouge bg-rouge/10" : "text-vert bg-vert/10"} px-2 py-0.5 rounded`}>
+                  -{p.data.reduction_pct}%
+                </span>
+                <h3 class="font-bold text-[14.5px] text-neutral-900 mt-2 leading-tight">{p.data.titre}</h3>
+                <p class="text-[12px] text-neutral-500 mt-1">
+                  Du {fmtDateFr(p.data.date_debut)} au {fmtDateFr(p.data.date_fin)}.
+                  {p.data.description ? ` ${p.data.description}` : ""}
+                </p>
+              </div>
+              <a href="/promos" class="text-[12.5px] font-bold text-vert hover:underline flex items-center gap-1">Consulter la promo →</a>
             </div>
-            <a href="/promos" class="text-[12.5px] font-bold text-vert hover:underline flex items-center gap-1">Consulter les arrivages →</a>
           </div>
-        </div>
+        ))}
 
-        <!-- Event Banner Card -->
-        <div class="bg-gradient-to-br from-vert to-vert-dark text-white rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden shadow-sm">
-          <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none">
-            <img src="/logos/favicon-marchedemo-contourwh.png" alt="" class="w-36 h-36" />
+        <!-- Event Banner Card — latest actu -->
+        {actus.length > 0 && (
+          <div class="bg-gradient-to-br from-vert to-vert-dark text-white rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden shadow-sm">
+            <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+              <img src="/logos/favicon-marchedemo-contourwh.png" alt="" class="w-36 h-36" />
+            </div>
+            <div class="relative z-10 text-left">
+              <span class="text-[9px] font-black uppercase bg-white/20 text-white px-2 py-0.5 rounded tracking-wider">{actus[0].badgeLabel || "Actualité"}</span>
+              <h3 class="font-soft font-bold text-[18px] mt-2.5 leading-snug">{actus[0].titre}</h3>
+              {actus[0].resume && (
+                <p class="text-[12.5px] text-white/80 mt-1 leading-snug">{actus[0].resume}</p>
+              )}
+            </div>
+            <a href="/actualites" class="text-[13px] font-bold text-white underline underline-offset-4 hover:opacity-90 mt-5 block text-left">Voir toutes les actualités</a>
           </div>
-          <div class="relative z-10 text-left">
-            <span class="text-[9px] font-black uppercase bg-white/20 text-white px-2 py-0.5 rounded tracking-wider">Événement</span>
-            <h3 class="font-soft font-bold text-[18px] mt-2.5 leading-snug">Grand Marché Frais d'Été</h3>
-            <p class="text-[12.5px] text-white/80 mt-1 leading-snug">Profitez d'un arrivage direct de pastèques, melons exotiques et menthe fraîche à prix coûtant.</p>
-          </div>
-          <a href="/actualites" class="text-[13px] font-bold text-white underline underline-offset-4 hover:opacity-90 mt-5 block text-left">Voir tous les événements</a>
-        </div>
+        )}
       </div>
     </div>
   </section>
 
   {/* ====================== 7 · SECTIONS CULTURELLES (Maghreb, Asie, Afrique, Inde, Italie) ====================== */}
+  {/* Chaque section porte data-culture="…" : elle hérite du fond dégradé
+      teinté, des motifs de coin dessinés main, du titre-filigrane et des
+      boutons sur palette définis dans rayons/cultural-palettes.css. */}
   {/* SECTION MAGHREB & MÉDITERRANÉE */}
-  <section class="section bg-white pt-12 pb-10 hidden lg:block">
+  <section class="section pt-12 pb-10 border-b border-neutral-100" data-culture="maghreb">
+    <div class="culture-ribbon" aria-hidden="true"></div>
     <div class="container-mo">
       <div class="mb-8 text-left">
-        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveur-mediterranee']}`}>Saveurs de Méditerranée</span>
+        <span class="eyebrow">Saveurs de Méditerranée</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Maghreb">
           Le soleil dans votre assiette.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
           Découvrez notre sélection d'huiles d'olive extra vierges tunisiennes, semoule fine pour couscous, olives marinées maison et pâtisseries orientales.
         </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="culture-badge">Huile d'olive de Tunisie</span>
+          <span class="culture-badge">Semoule fine couscous</span>
+          <span class="culture-badge">Harissa du Cap Bon</span>
+          <span class="culture-badge">Cornes de gazelle</span>
+          <span class="culture-badge">Olives marinées maison</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
@@ -380,21 +403,36 @@ const schemas = [
           </div>
         ))}
       </div>
+
+      <div class="mt-8 text-left">
+        <a href="/rayons/saveur-mediterranee" class="culture-cta">
+          Voir tout le rayon Méditerranée
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+        </a>
+      </div>
     </div>
   </section>
-  <div class="culture-divider hidden lg:block" data-culture="maghreb" />
+  <div class="culture-divider" data-culture="maghreb" />
 
   {/* SECTION ASIE */}
-  <section class="section bg-white pt-12 pb-10 hidden lg:block">
+  <section class="section pt-12 pb-10 border-b border-neutral-100" data-culture="asie">
+    <div class="culture-ribbon" aria-hidden="true"></div>
     <div class="container-mo">
       <div class="mb-8 text-left">
-        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveurs-asie']}`}>Saveurs d'Asie</span>
+        <span class="eyebrow">Saveurs d'Asie</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Asie">
           L'Asie à portée de baguettes.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
           Riz jasmin parfumé, nouilles de blé et de riz, sauces soja de garde, pâtes de curry thaïes et sélection de thés parfumés.
         </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="culture-badge">Riz jasmin de Thaïlande</span>
+          <span class="culture-badge">Nouilles udon</span>
+          <span class="culture-badge">Sauce soja de garde</span>
+          <span class="culture-badge">Curry thaï</span>
+          <span class="culture-badge">Gochujang coréen</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
@@ -404,11 +442,18 @@ const schemas = [
           </div>
         ))}
       </div>
+
+      <div class="mt-8 text-left">
+        <a href="/rayons/saveurs-asie" class="culture-cta">
+          Voir tout le rayon Asie
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+        </a>
+      </div>
     </div>
   </section>
   {/* Intermediate Logo signature area (Asie) */}
   <div
-    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none bg-neutral-50/20"
+    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none bg-neutral-50/20"
     style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.04) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
   >
     <div class="group relative block shrink-0">
@@ -423,19 +468,27 @@ const schemas = [
     </div>
   </div>
 
-  <div class="culture-divider hidden lg:block" data-culture="asie" />
+  <div class="culture-divider" data-culture="asie" />
 
   {/* SECTION AFRIQUE & CRÉOLE */}
-  <section class="section bg-white pt-12 pb-10 hidden lg:block">
+  <section class="section pt-12 pb-10 border-b border-neutral-100" data-culture="creole">
+    <div class="culture-ribbon" aria-hidden="true"></div>
     <div class="container-mo">
       <div class="mb-8 text-left">
-        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveurs-afrique']}`}>Saveurs d'Afrique &amp; Antilles</span>
-        <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Afrique">
+        <span class="eyebrow">Saveurs d'Afrique &amp; Antilles</span>
+        <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Créole">
           Saveurs d'Afrique et Créoles.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
           Manioc frais, bananes plantain mûres, farine de fufu, piment végétarien doux, gombos et huiles de palme raffinées de qualité.
         </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="culture-badge">Manioc frais</span>
+          <span class="culture-badge">Plantain mûr</span>
+          <span class="culture-badge">Farine de fufu</span>
+          <span class="culture-badge">Gombos</span>
+          <span class="culture-badge">Colombo antillais</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
@@ -445,21 +498,36 @@ const schemas = [
           </div>
         ))}
       </div>
+
+      <div class="mt-8 text-left">
+        <a href="/rayons/saveurs-afrique" class="culture-cta">
+          Voir tout le rayon Afrique &amp; Antilles
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+        </a>
+      </div>
     </div>
   </section>
-  <div class="culture-divider hidden lg:block" data-culture="afrique" />
+  <div class="culture-divider" data-culture="creole" />
 
   {/* SECTION INDE */}
-  <section class="section bg-white pt-12 pb-10 hidden lg:block">
+  <section class="section pt-12 pb-10 border-b border-neutral-100" data-culture="inde">
+    <div class="culture-ribbon" aria-hidden="true"></div>
     <div class="container-mo">
       <div class="mb-8 text-left">
-        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['epices-du-monde']}`}>Inde &amp; Épices du Monde</span>
+        <span class="eyebrow">Inde &amp; Épices du Monde</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Inde">
           Un voyage aromatique intense.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
           Curcuma de Madras, graines de cardamome verte, riz basmati de garde, mélanges garam masala authentiques et condiments chutney.
         </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="culture-badge">Garam masala</span>
+          <span class="culture-badge">Cardamome verte</span>
+          <span class="culture-badge">Riz basmati</span>
+          <span class="culture-badge">Chutney de mangue</span>
+          <span class="culture-badge">Curcuma de Madras</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
@@ -469,21 +537,36 @@ const schemas = [
           </div>
         ))}
       </div>
+
+      <div class="mt-8 text-left">
+        <a href="/rayons/epices-du-monde" class="culture-cta">
+          Voir tout le rayon Épices du Monde
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+        </a>
+      </div>
     </div>
   </section>
-  <div class="culture-divider hidden lg:block" data-culture="inde" />
+  <div class="culture-divider" data-culture="inde" />
 
   {/* SECTION ITALIE */}
-  <section class="section bg-white pt-12 pb-10 hidden lg:block">
+  <section class="section pt-12 pb-10 border-b border-neutral-100" data-culture="italie">
+    <div class="culture-ribbon" aria-hidden="true"></div>
     <div class="container-mo">
       <div class="mb-8 text-left">
-        <span class="eyebrow" style={`color: ${CATEGORY_ACCENTS['saveur-mediterranee']}`}>Gastronomie Italienne</span>
+        <span class="eyebrow">Gastronomie Italienne</span>
         <h2 class="display-lg mt-4 text-balance text-neutral-900" data-watermark="Italie">
           Le goût de la Dolce Vita.
         </h2>
         <p class="mt-4 text-[16px] text-neutral-600 leading-relaxed max-w-2xl">
           Pâtes italiennes traditionnelles, sauces pesto fraîches, huile d'olive vierge extra de Sicile et ingrédients fins de la gastronomie italienne.
         </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="culture-badge">Pâtes artisanales</span>
+          <span class="culture-badge">Pesto genovese</span>
+          <span class="culture-badge">Huile de Sicile</span>
+          <span class="culture-badge">Tomates San Marzano</span>
+          <span class="culture-badge">Antipasti</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5" data-reveal-stagger>
@@ -493,11 +576,18 @@ const schemas = [
           </div>
         ))}
       </div>
+
+      <div class="mt-8 text-left">
+        <a href="/rayons/saveur-mediterranee" class="culture-cta">
+          Voir tout le rayon Méditerranée — Italie
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+        </a>
+      </div>
     </div>
   </section>
   {/* Intermediate Logo signature area (Italie) */}
   <div
-    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none bg-neutral-50/20"
+    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none bg-neutral-50/20"
     style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.04) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
   >
     <div class="group relative block shrink-0">
@@ -512,10 +602,39 @@ const schemas = [
     </div>
   </div>
 
-  <div class="culture-divider hidden lg:block" data-culture="italie" />
+  <div class="culture-divider" data-culture="italie" />
+
+  {/* ====================== RECETTES DU MONDE ====================== */}
+  {recettesVedettes.length > 0 && (
+    <section class="section bg-white py-12 border-b border-neutral-100">
+      <div class="container-mo">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 text-left">
+          <div class="max-w-2xl">
+            <span class="eyebrow">Recettes du Monde</span>
+            <h2 class="display-lg mt-4 text-balance">
+              Cuisinez la planète, <span class="text-vert">avec nos rayons</span>.
+            </h2>
+            <p class="mt-3 text-[15px] text-neutral-600">
+              Des recettes authentiques qui utilisent les produits de nos rayons. Tous les ingrédients sont disponibles en magasin.
+            </p>
+          </div>
+          <a href="/recettes" class="btn btn-secondary shrink-0 font-bold">
+            Toutes les recettes
+          </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+          {recettesVedettes.map((r, i) => (
+            <div class="reveal" style={`--reveal-delay: ${i * 80}ms`}>
+              <RecetteCard recette={r} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
 
   {/* ====================== 8 · EDITORIAL NEWS & TIKTOK VIDEOS ====================== */}
-  <section class="section bg-white relative overflow-hidden py-12 hidden lg:block">
+  <section class="section bg-white relative overflow-hidden py-12">
     <div class="container-mo">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal text-left">
         <div class="max-w-2xl">
@@ -537,7 +656,7 @@ const schemas = [
   </section>
 
   {videos.length > 0 && (
-    <section class="section bg-blanc animate-fade-up py-12 border-t border-neutral-100 hidden lg:block">
+    <section class="section bg-blanc animate-fade-up py-12 border-t border-neutral-100">
       <div class="container-mo">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 reveal text-left">
           <div class="max-w-2xl">
@@ -567,7 +686,7 @@ const schemas = [
   )}
 
   {/* ====================== 9 · LE MAGASIN TOULOUSE SUD ====================== */}
-  <section class="section bg-white border-t border-b border-neutral-100 py-14 hidden lg:block">
+  <section class="section bg-white border-t border-b border-neutral-100 py-14">
     <div class="container-mo">
       <div class="text-center max-w-3xl mx-auto mb-14 reveal">
         <span class="eyebrow !justify-center">Notre magasin</span>
@@ -650,12 +769,12 @@ const schemas = [
   </section>
 
   {/* ====================== NEWSLETTER ====================== */}
-  <div class="hidden lg:block">
+  <div>
     <NewsletterInline variant="dark" />
   </div>
 
   {/* ====================== 10 · NOS 4 ENGAGEMENTS (Restauration V2) ====================== */}
-  <section class="section bg-white py-14 border-b border-neutral-100 hidden lg:block">
+  <section class="section bg-white py-14 border-b border-neutral-100">
     <div class="container-mo">
       <div class="text-center max-w-3xl mx-auto mb-14 reveal">
         <span class="eyebrow !justify-center">Nos 4 engagements</span>
@@ -704,9 +823,37 @@ const schemas = [
     </div>
   </section>
 
-  {/* Intermediate Logo signature area 2 (Break after engagements) */}
+  {/* ====================== DEVENIR FRANCHISÉ ====================== */}
+  <section class="section py-14 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-vert via-vert-dark to-noir"></div>
+    <div class="absolute inset-0 opacity-5 pointer-events-none">
+      <img src="/logos/favicon-marchedemo-contourwh.png" alt="" class="absolute right-[-5%] bottom-[-10%] w-[40%] h-auto" />
+    </div>
+    <div class="container-mo relative z-10">
+      <div class="max-w-3xl mx-auto text-center text-white">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 text-white text-[11px] font-black uppercase tracking-wider mb-6">🚀 Franchise</span>
+        <h2 class="font-soft font-bold text-[28px] md:text-[36px] leading-tight text-white">
+          Ouvrez votre <span class="text-vert-light">Marché de Mo'</span>
+        </h2>
+        <p class="mt-4 text-[16px] text-white/80 leading-relaxed max-w-xl mx-auto">
+          Rejoignez le premier réseau de supermarchés du monde en France. Un concept unique, une communauté engagée, un accompagnement complet.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <a href="/franchise" class="btn bg-white text-vert hover:bg-neutral-100 font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+            Découvrir la franchise
+            <svg class="w-4 h-4 ml-1 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+          </a>
+          <a href="/service-client" class="btn border-2 border-white/30 text-white hover:border-white font-bold text-[14px] px-8 py-3.5 rounded-full transition-all hover:-translate-y-0.5">
+            Nous contacter
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* Intermediate Logo signature area 2 (Break after franchise) */}
   <div
-    class="w-full hidden lg:flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
+    class="w-full flex flex-col items-center overflow-hidden border-t border-b border-neutral-100 py-8 select-none"
     style="background: radial-gradient(circle at center, rgba(46, 139, 74, 0.05) 0%, rgba(255, 255, 255, 0) 80%), url('data:image/svg+xml,%3Csvg width=\'120\' height=\'24\' viewBox=\'0 0 120 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 12 Q 30 0, 60 12 T 120 12\' fill=\'none\' stroke=\'%231c6b35\' stroke-width=\'1.5\' stroke-opacity=\'0.04\'/%3E%3C/svg%3E') repeat;"
   >
     <div class="group relative block shrink-0">
@@ -722,7 +869,7 @@ const schemas = [
   </div>
 
   {/* ====================== SUGGESTIONS FORM ====================== */}
-  <section id="suggestions" class="section bg-white scroll-mt-24 hidden lg:block">
+  <section id="suggestions" class="section bg-white scroll-mt-24">
     <div class="container-mo">
       <div class="relative overflow-hidden rounded-3xl p-8 md:p-12 bg-neutral-50 border border-black/5">
         <!-- Decorative Mo' watermark -->
@@ -839,9 +986,11 @@ const schemas = [
   </script>
 
   {/* ====================== FAQ Accordion ====================== */}
-  <div class="hidden lg:block">
+  <div>
     <FAQAccordion items={FAQ_HOME} />
   </div>
+
+  <FeedbackPopup />
 </Layout>
 
 <!-- Promotions Autoplay and Translation Animation script -->

@@ -25,8 +25,14 @@ export const SESSION_TTL_MS = TTL_HOURS * 60 * 60 * 1000;
 export const COOKIE_NAME = 'mdm_auth';
 
 function getSecret() {
-  const secret = import.meta.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return secret || 'marchedemo-default-secret-change-me';
+  // Secret dédié aux sessions inventaire (préféré). On retombe sur la
+  // service-role key uniquement pour ne pas invalider les sessions des
+  // déploiements existants — à migrer vers INVENTAIRE_SESSION_SECRET.
+  const dedicated = readEnv('INVENTAIRE_SESSION_SECRET');
+  if (dedicated) return dedicated;
+  const legacy = import.meta.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (legacy) return legacy;
+  return 'marchedemo-default-secret-change-me';
 }
 
 function sign(payload) {
